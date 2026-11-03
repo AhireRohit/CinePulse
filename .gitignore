@@ -1,0 +1,38 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.ruff_cache/
+
+# Data and Artifacts (except templates/configs)
+data/raw/*.zip
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*.parquet
+data/processed/*.json
+data/processed/*.pkl
+!data/processed/.gitkeep
+artifacts/models/*
+!artifacts/models/.gitkeep
+artifacts/indices/*
+!artifacts/indices/.gitkeep
+
+# SQLite database
+cinepulse.db
+*.sqlite3
+*.db
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env

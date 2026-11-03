@@ -1,0 +1,19 @@
+services:
+  cinepulse:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cinepulse:latest
+    container_name: cinepulse-app
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - FORCE_CPU=true
+      - PORT=8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
