@@ -1,5 +1,7 @@
 from pathlib import Path
+import pytest
 
+playwright = pytest.importorskip("playwright")
 from playwright.sync_api import sync_playwright
 
 SCREENSHOTS_DIR = Path("artifacts/screenshots")

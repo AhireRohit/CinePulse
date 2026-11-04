@@ -34,7 +34,7 @@ jobs:
 
       - name: Run Data Pipeline & Offline Evaluation Smoke Tests
         run: |
-          pytest -v -k "not test_browser_e2e"
+          pytest -v --ignore=tests/test_browser_e2e.py
 
   frontend-build:
     name: Frontend TypeScript & Vite Build
