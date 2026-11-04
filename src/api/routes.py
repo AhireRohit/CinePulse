@@ -317,11 +317,12 @@ async def search_movies(q: str = Query(min_length=1)):
     engine = get_engine()
     query_lower = q.lower().strip()
 
-    # Search in clean_title and genres
+    # Search in clean_title, genres, and release year
     matches = engine.movies_df[
         engine.movies_df["clean_title"].str.lower().str.contains(query_lower, na=False) |
-        engine.movies_df["genres"].str.lower().str.contains(query_lower, na=False)
-    ].head(30)
+        engine.movies_df["genres"].str.lower().str.contains(query_lower, na=False) |
+        engine.movies_df["release_year"].astype(str).str.contains(query_lower, na=False)
+    ].head(50)
 
     results = []
     for rank_idx, (_, row) in enumerate(matches.iterrows()):

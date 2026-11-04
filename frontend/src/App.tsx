@@ -9,6 +9,7 @@ import { InsightsPage } from './pages/InsightsPage';
 import { EvaluationPage } from './pages/EvaluationPage';
 import { MovieDetailModal } from './components/MovieDetailModal';
 import { OnboardingModal } from './components/OnboardingModal';
+import { SessionDrawer } from './components/SessionDrawer';
 
 export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState('feed');
@@ -18,6 +19,7 @@ export const App: React.FC = () => {
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [sessionDrawerOpen, setSessionDrawerOpen] = useState(false);
   const [sessionEventCount, setSessionEventCount] = useState(0);
   const [feedbackNotification, setFeedbackNotification] = useState<string | null>(null);
 
@@ -62,14 +64,14 @@ export const App: React.FC = () => {
 
       const msg =
         action === 'like'
-          ? 'Liked! Recommendations boosted for similar titles.'
+          ? 'Liked! Real-time recommendations boosted for similar titles.'
           : action === 'dislike'
-          ? 'Disliked! Item suppressed and genre weights reduced.'
+          ? 'Disliked! Item suppressed instantly from candidate pools.'
           : action === 'save'
           ? 'Saved to your personal Watchlist.'
           : action === 'rate'
-          ? `Rated ${rating}★! Session vector updated.`
-          : 'Dismissed! Hidden from future candidates.';
+          ? `Rated ${rating}★! Session vector dynamically recalibrated.`
+          : 'Dismissed! Hidden from future candidate retrieval.';
 
       setFeedbackNotification(msg);
       setTimeout(() => setFeedbackNotification(null), 3500);
@@ -82,8 +84,8 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-gray-100 flex flex-col font-sans">
-      {/* Navigation Bar */}
+    <div className="min-h-screen bg-background text-gray-100 flex flex-col font-sans selection:bg-accent selection:text-black">
+      {/* Top Navigation Bar with Embedded Global Search */}
       <Navbar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
@@ -95,13 +97,16 @@ export const App: React.FC = () => {
         }}
         onOpenOnboarding={() => setOnboardingOpen(true)}
         sessionEventCount={sessionEventCount}
+        onOpenDetail={(id) => setSelectedMovieId(id)}
+        onFeedback={handleFeedback}
+        onOpenSessionDrawer={() => setSessionDrawerOpen(true)}
       />
 
       {/* Floating Session Real-time Adaptation Toast */}
       {feedbackNotification && (
         <div className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-surface-elevated border border-accent/40 shadow-2xl flex items-center space-x-3 text-xs text-white animate-fade-in">
-          <span className="w-2 h-2 rounded-full bg-accent animate-ping" />
-          <span>{feedbackNotification}</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-accent animate-ping" />
+          <span className="font-medium">{feedbackNotification}</span>
         </div>
       )}
 
@@ -142,12 +147,12 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-8 text-center text-xs text-muted">
+      {/* Editorial Footer */}
+      <footer className="border-t border-border py-8 text-center text-xs text-muted bg-surface/30">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-2">
-            <span className="font-display font-semibold text-white">CINEPULSE</span>
-            <span>— Production Multi-Stage Recommendation Platform</span>
+            <span className="font-display font-extrabold text-white tracking-wider">CINEPULSE</span>
+            <span>— Production-Grade Multi-Stage Recommendation Platform</span>
           </div>
           <div className="text-[11px] font-mono text-muted">
             GroupLens MovieLens 1M • Two-Tower Neural Retrieval • LightGBM LambdaRank • FAISS ANN
@@ -162,7 +167,17 @@ export const App: React.FC = () => {
         onFeedback={handleFeedback}
       />
 
-      {/* Onboarding Modal */}
+      {/* Real-time Session Adaptation Slide-over Drawer */}
+      <SessionDrawer
+        isOpen={sessionDrawerOpen}
+        onClose={() => setSessionDrawerOpen(false)}
+        currentUser={currentUser}
+        sessionEventCount={sessionEventCount}
+        onFeedback={handleFeedback}
+        onRefreshFeed={() => loadFeed()}
+      />
+
+      {/* Cold-Start Onboarding Modal */}
       {onboardingOpen && (
         <OnboardingModal
           onClose={() => setOnboardingOpen(false)}
@@ -176,4 +191,5 @@ export const App: React.FC = () => {
     </div>
   );
 };
+
 export default App;
