@@ -1,8 +1,6 @@
 from pathlib import Path
-import pytest
 
-playwright = pytest.importorskip("playwright")
-from playwright.sync_api import sync_playwright
+import pytest
 
 SCREENSHOTS_DIR = Path("artifacts/screenshots")
 SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -19,6 +17,9 @@ def test_browser_e2e_and_capture_screenshots():
     5. Live Offline Evaluation Benchmarks & Bootstrap Metrics
     6. Category & Exploration Rails
     """
+    pytest.importorskip("playwright")
+    from playwright.sync_api import sync_playwright
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 1440, "height": 900})
