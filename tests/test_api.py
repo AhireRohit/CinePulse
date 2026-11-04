@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -103,6 +105,9 @@ def test_offline_metrics(client):
 
 
 def test_frontend_serving(client):
+    frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+    if not (frontend_dist / "index.html").exists():
+        pytest.skip("Frontend dist not built (tested in frontend build job).")
     response = client.get("/")
     assert response.status_code == 200
     assert "text/html" in response.headers.get("content-type", "")
