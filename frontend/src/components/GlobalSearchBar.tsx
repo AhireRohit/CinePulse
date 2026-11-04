@@ -89,7 +89,10 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
 
   // Keyboard navigation within results
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsOpen(false);
+    } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev));
     } else if (e.key === 'ArrowUp') {
@@ -129,7 +132,10 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
 
       {/* Spotlight Command / Search Modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/80 backdrop-blur-md animate-fade-in">
+        <div
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/80 backdrop-blur-md animate-fade-in"
+        >
           <div
             ref={modalRef}
             onClick={(e) => e.stopPropagation()}

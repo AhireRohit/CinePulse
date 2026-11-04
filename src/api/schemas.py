@@ -7,6 +7,7 @@ class UserProfileResponse(BaseModel):
     display_name: str
     avatar_color: str
     bio: str | None = None
+    auth_token: str | None = None
     preferred_genres: list[str] = Field(default_factory=list)
 
 
@@ -29,8 +30,11 @@ class RecommendationItem(BaseModel):
     genres: list[str]
     rating_mean: float
     rating_count: int
+    bayesian_rating: float | None = None
     final_score: float
     relevance_score: float
+    match_percentage: int | None = None
+    affinity_label: str | None = None
     diversity_penalty: float
     novelty_score: float
     retrieval_source: str

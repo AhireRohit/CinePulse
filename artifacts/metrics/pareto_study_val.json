@@ -1,0 +1,90 @@
+[
+  {
+    "Configuration": "MMR Disabled (Pure Ranker)",
+    "Recall@20": 0.224,
+    "Recall@100": 0.482,
+    "NDCG@10": 0.0659,
+    "MRR@10": 0.0479,
+    "ILD": 0.5836,
+    "Novelty": 10.21,
+    "Coverage@20": 0.4046,
+    "Latency_P95_ms": 0.05
+  },
+  {
+    "Configuration": "lambda=1.00, beta=0.00 (Identity MMR)",
+    "Recall@20": 0.224,
+    "Recall@100": 0.482,
+    "NDCG@10": 0.0659,
+    "MRR@10": 0.0479,
+    "ILD": 0.5836,
+    "Novelty": 10.21,
+    "Coverage@20": 0.4046,
+    "Latency_P95_ms": 2.32
+  },
+  {
+    "Configuration": "lambda=1.00, beta=0.03 (Relevance + Low Nov)",
+    "Recall@20": 0.224,
+    "Recall@100": 0.482,
+    "NDCG@10": 0.0635,
+    "MRR@10": 0.046,
+    "ILD": 0.5813,
+    "Novelty": 10.24,
+    "Coverage@20": 0.4078,
+    "Latency_P95_ms": 2.4
+  },
+  {
+    "Configuration": "lambda=0.95, beta=0.00 (Mild Div, Zero Nov)",
+    "Recall@20": 0.216,
+    "Recall@100": 0.486,
+    "NDCG@10": 0.0667,
+    "MRR@10": 0.0489,
+    "ILD": 0.609,
+    "Novelty": 10.18,
+    "Coverage@20": 0.4011,
+    "Latency_P95_ms": 1.65
+  },
+  {
+    "Configuration": "lambda=0.90, beta=0.01 (Conservative)",
+    "Recall@20": 0.21,
+    "Recall@100": 0.484,
+    "NDCG@10": 0.062,
+    "MRR@10": 0.0457,
+    "ILD": 0.6333,
+    "Novelty": 10.18,
+    "Coverage@20": 0.399,
+    "Latency_P95_ms": 2.13
+  },
+  {
+    "Configuration": "lambda=0.85, beta=0.03 (Balanced Production)",
+    "Recall@20": 0.212,
+    "Recall@100": 0.484,
+    "NDCG@10": 0.0613,
+    "MRR@10": 0.0444,
+    "ILD": 0.6559,
+    "Novelty": 10.18,
+    "Coverage@20": 0.3999,
+    "Latency_P95_ms": 1.73
+  },
+  {
+    "Configuration": "lambda=0.75, beta=0.05 (Exploration)",
+    "Recall@20": 0.2,
+    "Recall@100": 0.482,
+    "NDCG@10": 0.0583,
+    "MRR@10": 0.0425,
+    "ILD": 0.7032,
+    "Novelty": 10.19,
+    "Coverage@20": 0.3972,
+    "Latency_P95_ms": 1.76
+  },
+  {
+    "Configuration": "lambda=0.65, beta=0.15 (Original Aggressive)",
+    "Recall@20": 0.166,
+    "Recall@100": 0.482,
+    "NDCG@10": 0.0402,
+    "MRR@10": 0.0276,
+    "ILD": 0.7572,
+    "Novelty": 10.36,
+    "Coverage@20": 0.4128,
+    "Latency_P95_ms": 1.85
+  }
+]

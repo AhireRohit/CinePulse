@@ -15,6 +15,7 @@ class User(Base):
     display_name = Column(String(128), nullable=False)
     avatar_color = Column(String(32), default="#D4AF37")
     bio = Column(String(256), nullable=True)
+    auth_token = Column(String(64), nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

@@ -7,18 +7,23 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
-# Data and Artifacts (except templates/configs)
-data/raw/*.zip
+# Raw Data
 data/raw/*
 !data/raw/.gitkeep
+
+# Processed Data: commit only runtime metadata and posters, ignore large training matrices
 data/processed/*.parquet
+!data/processed/movies.parquet
 data/processed/*.json
+!data/processed/mappings.json
+!data/processed/movie_posters.json
 data/processed/*.pkl
 !data/processed/.gitkeep
-artifacts/models/*
-!artifacts/models/.gitkeep
-artifacts/indices/*
-!artifacts/indices/.gitkeep
+
+# Backups and temporary files
+artifacts/indices_backup_v1/
+artifacts/models_backup_v1/
+*.log
 
 # SQLite database
 cinepulse.db

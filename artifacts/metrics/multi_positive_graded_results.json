@@ -1,0 +1,35 @@
+{
+  "_metadata": {
+    "status": "INVALID_METHODOLOGICALLY_COMPROMISED",
+    "leakage_rate": "60.0% (15,858 of 26,430 test pairs were observed in ratings_train.parquet)",
+    "warning": "DO NOT USE FOR VALID BENCHMARK CLAIMS. Models were trained under leave-last-2-out. Evaluating against a 5-interaction holdout without retraining creates 60% training set overlap.",
+    "reproducible_fix_procedure": "To create a clean multi-positive benchmark: 1) Run data preparation with K=5 temporal holdout; 2) Retrain Two-Tower on the clean K=5 train split; 3) Rebuild FAISS index; 4) Retrain LightGBM on K=5 candidate pools; 5) Run evaluate.py against the genuine K=5 holdout."
+  },
+  "Item-based CF": {
+    "status": "COMPROMISED",
+    "binary_ndcg@10": 0.0228,
+    "graded_ndcg@10": 0.024,
+    "graded_vs_binary_delta": 0.0011,
+    "recall@20_all_relevant": 0.0527,
+    "recall@20_positive_only": 0.0626,
+    "eval_users": 500
+  },
+  "Two-Tower + LightGBM Ranker": {
+    "status": "COMPROMISED",
+    "binary_ndcg@10": 0.0502,
+    "graded_ndcg@10": 0.05,
+    "graded_vs_binary_delta": -0.0002,
+    "recall@20_all_relevant": 0.0987,
+    "recall@20_positive_only": 0.1079,
+    "eval_users": 500
+  },
+  "Full Pipeline (Retrieval + Ranker + MMR)": {
+    "status": "COMPROMISED",
+    "binary_ndcg@10": 0.0446,
+    "graded_ndcg@10": 0.0466,
+    "graded_vs_binary_delta": 0.0019,
+    "recall@20_all_relevant": 0.0935,
+    "recall@20_positive_only": 0.1,
+    "eval_users": 500
+  }
+}

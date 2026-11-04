@@ -25,6 +25,9 @@ export interface RecommendationItem {
   reason: string;
   poster_url?: string;
   backdrop_url?: string;
+  match_percentage?: number;
+  affinity_label?: string;
+  bayesian_rating?: number;
 }
 
 export interface RecommendationFeed {

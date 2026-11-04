@@ -27,14 +27,32 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
       .finally(() => setLoading(false));
   }, [movieId]);
 
+  // Handle Escape key to dismiss modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (movieId === null) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
+    >
       <div className="relative w-full max-w-3xl bg-surface-elevated border border-border rounded-2xl shadow-2xl overflow-hidden my-8">
         {/* Close Button */}
         <button
           onClick={onClose}
+          aria-label="Close modal"
+          data-testid="close-modal"
           className="absolute top-4 right-4 z-20 p-2 rounded-full bg-surface/80 hover:bg-surface text-muted hover:text-white border border-border transition"
         >
           <X className="w-5 h-5" />
@@ -47,54 +65,77 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
           </div>
         ) : (
           <div>
-            {/* Header Art / Typographic Banner */}
-            <div className="relative bg-gradient-to-r from-neutral-900 via-stone-900 to-slate-900 p-8 border-b border-border">
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                {detail.genres.map((g) => (
-                  <span
-                    key={g}
-                    className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-black/50 border border-white/10 text-gray-200"
-                  >
-                    {g}
-                  </span>
-                ))}
-                <span className="text-xs font-mono text-muted">• {detail.release_year}</span>
-              </div>
+            {/* Header Art / Poster Banner */}
+            <div className="relative bg-gradient-to-r from-neutral-900 via-stone-900 to-slate-900 p-6 sm:p-8 border-b border-border overflow-hidden">
+              {detail.poster_url && (
+                <div className="absolute right-0 top-0 bottom-0 w-1/2 overflow-hidden pointer-events-none opacity-20 hidden sm:block">
+                  <img
+                    src={detail.poster_url}
+                    alt={detail.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-neutral-900 via-neutral-900/60 to-transparent" />
+                </div>
+              )}
+              <div className="flex flex-col sm:flex-row items-start gap-6 relative z-10">
+                {detail.poster_url && (
+                  <div className="w-24 sm:w-28 flex-shrink-0 rounded-xl overflow-hidden shadow-2xl border border-white/10 hidden sm:block">
+                    <img
+                      src={detail.poster_url}
+                      alt={detail.title}
+                      className="w-full h-auto object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    {detail.genres.map((g) => (
+                      <span
+                        key={g}
+                        className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-black/50 border border-white/10 text-gray-200"
+                      >
+                        {g}
+                      </span>
+                    ))}
+                    <span className="text-xs font-mono text-muted">• {detail.release_year}</span>
+                  </div>
 
-              <h2 className="font-display font-bold text-3xl text-white tracking-tight leading-snug">
-                {detail.title}
-              </h2>
-              <p className="text-xs text-muted font-mono mt-1">{detail.full_title}</p>
+                  <h2 className="font-display font-bold text-2xl sm:text-3xl text-white tracking-tight leading-snug">
+                    {detail.title}
+                  </h2>
+                  <p className="text-xs text-muted font-mono mt-1">{detail.full_title}</p>
 
-              {/* Ratings and Stats */}
-              <div className="flex flex-wrap items-center gap-6 mt-6 pt-4 border-t border-white/10">
-                <div className="flex items-center space-x-2">
-                  <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                  <div>
-                    <div className="text-sm font-bold text-white">
-                      {detail.rating_mean.toFixed(2)}{' '}
-                      <span className="text-xs font-normal text-muted">/ 5.0</span>
+                  {/* Ratings and Stats */}
+                  <div className="flex flex-wrap items-center gap-6 mt-6 pt-4 border-t border-white/10">
+                    <div className="flex items-center space-x-2">
+                      <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                      <div>
+                        <div className="text-sm font-bold text-white">
+                          {detail.rating_mean.toFixed(2)}{' '}
+                          <span className="text-xs font-normal text-muted">/ 5.0</span>
+                        </div>
+                        <div className="text-[10px] text-muted font-mono">
+                          {detail.rating_count.toLocaleString()} Ratings
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[10px] text-muted font-mono">
-                      {detail.rating_count.toLocaleString()} Ratings
+
+                    <div className="h-8 w-px bg-white/10 hidden sm:block" />
+
+                    <div>
+                      <div className="text-xs font-mono text-gray-200">
+                        {detail.bayesian_rating.toFixed(2)}
+                      </div>
+                      <div className="text-[10px] text-muted font-mono">Bayesian Weighted Score</div>
+                    </div>
+
+                    <div className="h-8 w-px bg-white/10 hidden sm:block" />
+
+                    <div>
+                      <div className="text-xs font-mono text-accent">MovieLens 1M</div>
+                      <div className="text-[10px] text-muted font-mono">Dataset Item ID #{detail.movieId}</div>
                     </div>
                   </div>
-                </div>
-
-                <div className="h-8 w-px bg-white/10 hidden sm:block" />
-
-                <div>
-                  <div className="text-xs font-mono text-gray-200">
-                    {detail.bayesian_rating.toFixed(2)}
-                  </div>
-                  <div className="text-[10px] text-muted font-mono">Bayesian Weighted Score</div>
-                </div>
-
-                <div className="h-8 w-px bg-white/10 hidden sm:block" />
-
-                <div>
-                  <div className="text-xs font-mono text-accent">MovieLens 1M</div>
-                  <div className="text-[10px] text-muted font-mono">Dataset Item ID #{detail.movieId}</div>
                 </div>
               </div>
             </div>
@@ -212,6 +253,11 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Attribution */}
+              <div className="pt-4 border-t border-border/60 text-center text-[10px] text-muted font-mono">
+                CinePulse Multi-Stage Recommender • MovieLens 1M Dataset • Verified artwork & metadata via IMDb & Wikimedia Commons
+              </div>
             </div>
           </div>
         )}

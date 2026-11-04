@@ -1,0 +1,178 @@
+{
+  "Popularity Baseline": {
+    "recall@20": 0.032,
+    "recall@20_ci95": [
+      0.018,
+      0.046
+    ],
+    "recall@100": 0.106,
+    "ndcg@10": 0.0118,
+    "ndcg@10_ci95": [
+      0.0046,
+      0.0205
+    ],
+    "graded_ndcg@10": 0.0118,
+    "graded_ndcg@10_ci95": [
+      0.0046,
+      0.0205
+    ],
+    "recall@20_positive_only": 0.0345,
+    "positive_only_eval_users": 348,
+    "mrr@10": 0.0089,
+    "catalog_coverage@20": 0.0228,
+    "catalog_coverage@100": 0.084,
+    "intra_list_diversity": 0.826,
+    "novelty_bits": 10.26,
+    "latency_p50_ms": 0.06,
+    "latency_p95_ms": 0.1
+  },
+  "Item-based CF": {
+    "recall@20": 0.112,
+    "recall@20_ci95": [
+      0.084,
+      0.138
+    ],
+    "recall@100": 0.322,
+    "ndcg@10": 0.025,
+    "ndcg@10_ci95": [
+      0.0163,
+      0.0349
+    ],
+    "graded_ndcg@10": 0.025,
+    "graded_ndcg@10_ci95": [
+      0.0163,
+      0.0349
+    ],
+    "recall@20_positive_only": 0.1322,
+    "positive_only_eval_users": 348,
+    "mrr@10": 0.0152,
+    "catalog_coverage@20": 0.1171,
+    "catalog_coverage@100": 0.4122,
+    "intra_list_diversity": 0.7207,
+    "novelty_bits": 9.39,
+    "latency_p50_ms": 1.14,
+    "latency_p95_ms": 5.62
+  },
+  "Content-based": {
+    "recall@20": 0.024,
+    "recall@20_ci95": [
+      0.012,
+      0.038
+    ],
+    "recall@100": 0.094,
+    "ndcg@10": 0.0019,
+    "ndcg@10_ci95": [
+      0.0,
+      0.0044
+    ],
+    "graded_ndcg@10": 0.0019,
+    "graded_ndcg@10_ci95": [
+      0.0,
+      0.0044
+    ],
+    "recall@20_positive_only": 0.0172,
+    "positive_only_eval_users": 348,
+    "mrr@10": 0.0008,
+    "catalog_coverage@20": 0.3671,
+    "catalog_coverage@100": 0.8305,
+    "intra_list_diversity": 0.0685,
+    "novelty_bits": 12.94,
+    "latency_p50_ms": 0.28,
+    "latency_p95_ms": 0.45
+  },
+  "Two-Tower (ANN Retrieval)": {
+    "recall@20": 0.074,
+    "recall@20_ci95": [
+      0.052,
+      0.098
+    ],
+    "recall@100": 0.256,
+    "ndcg@10": 0.0174,
+    "ndcg@10_ci95": [
+      0.0099,
+      0.0266
+    ],
+    "graded_ndcg@10": 0.0174,
+    "graded_ndcg@10_ci95": [
+      0.0099,
+      0.0266
+    ],
+    "recall@20_positive_only": 0.069,
+    "positive_only_eval_users": 348,
+    "mrr@10": 0.0116,
+    "catalog_coverage@20": 0.8065,
+    "catalog_coverage@100": 0.9965,
+    "intra_list_diversity": 0.4115,
+    "novelty_bits": 12.3,
+    "latency_p50_ms": 3.53,
+    "latency_p95_ms": 5.51
+  },
+  "Two-Tower + LightGBM Ranker": {
+    "recall@20": 0.086,
+    "recall@20_ci95": [
+      0.064,
+      0.11
+    ],
+    "recall@100": 0.318,
+    "ndcg@10": 0.0258,
+    "ndcg@10_ci95": [
+      0.0158,
+      0.0369
+    ],
+    "graded_ndcg@10": 0.0258,
+    "graded_ndcg@10_ci95": [
+      0.0158,
+      0.0369
+    ],
+    "recall@20_positive_only": 0.0891,
+    "positive_only_eval_users": 348,
+    "mrr@10": 0.0166,
+    "catalog_coverage@20": 0.296,
+    "catalog_coverage@100": 0.9599,
+    "intra_list_diversity": 0.632,
+    "novelty_bits": 10.56,
+    "latency_p50_ms": 16.17,
+    "latency_p95_ms": 23.93
+  },
+  "Full Pipeline (Retrieval + Ranker + MMR)": {
+    "recall@20": 0.082,
+    "recall@20_ci95": [
+      0.06,
+      0.106
+    ],
+    "recall@100": 0.31,
+    "ndcg@10": 0.0259,
+    "ndcg@10_ci95": [
+      0.0165,
+      0.0372
+    ],
+    "graded_ndcg@10": 0.0259,
+    "graded_ndcg@10_ci95": [
+      0.0165,
+      0.0372
+    ],
+    "recall@20_positive_only": 0.0833,
+    "positive_only_eval_users": 348,
+    "mrr@10": 0.0163,
+    "catalog_coverage@20": 0.2945,
+    "catalog_coverage@100": 0.976,
+    "intra_list_diversity": 0.6834,
+    "novelty_bits": 10.57,
+    "latency_p50_ms": 19.51,
+    "latency_p95_ms": 27.33,
+    "paired_delta_vs_item_cf": {
+      "delta_ndcg@10": 0.0009,
+      "delta_ndcg@10_ci95": [
+        -0.0122,
+        0.0148
+      ],
+      "p_value_ndcg@10": 0.906,
+      "delta_recall@20": -0.03,
+      "delta_recall@20_ci95": [
+        -0.06,
+        -0.002
+      ],
+      "p_value_recall@20": 0.058
+    }
+  }
+}

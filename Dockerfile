@@ -26,7 +26,7 @@ WORKDIR /app
 # Install Python CPU dependencies
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir greenlet
 
@@ -40,6 +40,9 @@ COPY pipelines /app/pipelines
 
 # Copy static frontend build from Stage 1
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
+
+# Ensure persistent data directory exists
+RUN mkdir -p /app/data_persist
 
 # Set production environment variables
 ENV ENVIRONMENT=production \

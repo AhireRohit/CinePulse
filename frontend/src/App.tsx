@@ -36,7 +36,7 @@ export const App: React.FC = () => {
   }, []);
 
   // Fetch recommendations when current user changes
-  const loadFeed = (diversity = 0.65, novelty = 0.15) => {
+  const loadFeed = (diversity = 0.85, novelty = 0.03) => {
     if (!currentUser) return;
     setLoadingFeed(true);
     getRecommendations(currentUser.user_idx, { diversity, novelty })

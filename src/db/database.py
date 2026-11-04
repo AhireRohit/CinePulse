@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -7,6 +8,13 @@ from sqlalchemy.orm import sessionmaker
 from src.core.config import settings
 from src.core.logging import logger
 from src.db.models import Base, OnboardingPreference, User
+
+# Ensure parent directory for SQLite database exists
+if "sqlite" in settings.database_url:
+    db_path_str = settings.database_url.split("sqlite:///")[-1].split("sqlite+aiosqlite:///")[-1]
+    if db_path_str:
+        p = Path(db_path_str).resolve()
+        p.parent.mkdir(parents=True, exist_ok=True)
 
 engine = create_async_engine(
     settings.database_url,

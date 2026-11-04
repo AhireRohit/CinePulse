@@ -122,7 +122,11 @@ def test_complete_user_lifecycle_journey():
         res_metrics = client.get("/api/metrics")
         assert res_metrics.status_code == 200
         metrics_data = res_metrics.json()
+        assert "Two-Tower (ANN Retrieval)" in metrics_data["models"]
+        tt_ann = metrics_data["models"]["Two-Tower (ANN Retrieval)"]
+        assert tt_ann["catalog_coverage@100"] > 0.90
+
         assert "Two-Tower + LightGBM Ranker" in metrics_data["models"]
         tt_lgbm = metrics_data["models"]["Two-Tower + LightGBM Ranker"]
-        assert tt_lgbm["ndcg@10"] > 0.02
-        assert tt_lgbm["catalog_coverage@100"] > 0.90
+        assert tt_lgbm["ndcg@10"] > 0.05
+        assert tt_lgbm["catalog_coverage@100"] > 0.70

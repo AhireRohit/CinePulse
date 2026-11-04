@@ -163,12 +163,29 @@ class MovieLensProcessor:
         )
 
         # 6. Build user sequence history from train split (prevent leakage!)
+        # NOTE: We use ALL interactions (including low-rated ones) to build the full
+        # interaction history list (used for exclusion / seen-item filtering).
+        # However, we also save a separate "positive-only" history (rating >= 3.5)
+        # used by the Two-Tower user tower history encoder so it encodes genuine
+        # preferences rather than a mix of likes and explicit dislikes.
         user_histories = (
             train_df.sort_values(["user_idx", "timestamp"])
             .groupby("user_idx")["movie_idx"]
             .apply(list)
             .to_dict()
         )
+
+        pos_train_df = train_df[train_df["rating"] >= 3.5]
+        user_positive_histories = (
+            pos_train_df.sort_values(["user_idx", "timestamp"])
+            .groupby("user_idx")["movie_idx"]
+            .apply(list)
+            .to_dict()
+        )
+        # Fall back to full history for users who have no positives above threshold
+        for uid, full_hist in user_histories.items():
+            if uid not in user_positive_histories:
+                user_positive_histories[uid] = full_hist
 
         # 7. Save Parquet and JSON artifacts
         logger.info(f"Saving processed artifacts to {self.output_dir}...")
@@ -178,8 +195,12 @@ class MovieLensProcessor:
         test_df.to_parquet(self.output_dir / "ratings_test.parquet", index=False)
 
         # Save user histories as JSON
+        # Full history (all ratings) used for seen-item exclusion in retrieval
         with open(self.output_dir / "user_train_histories.json", "w") as f:
             json.dump({str(k): v for k, v in user_histories.items()}, f)
+        # Positive-only history (rating >= 3.5) used by Two-Tower user tower encoder
+        with open(self.output_dir / "user_positive_histories.json", "w") as f:
+            json.dump({str(k): v for k, v in user_positive_histories.items()}, f)
 
         # Save ID mappings
         mappings = {
@@ -202,6 +223,7 @@ class MovieLensProcessor:
             "train_size": len(train_df),
             "val_size": len(val_df),
             "test_size": len(test_df),
+            "positive_history_users": len(user_positive_histories),
         }
 
 

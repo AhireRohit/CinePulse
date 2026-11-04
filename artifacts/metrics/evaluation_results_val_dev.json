@@ -1,0 +1,178 @@
+{
+  "Popularity Baseline": {
+    "recall@20": 0.048,
+    "recall@20_ci95": [
+      0.03,
+      0.07
+    ],
+    "recall@100": 0.144,
+    "ndcg@10": 0.0119,
+    "ndcg@10_ci95": [
+      0.0049,
+      0.0212
+    ],
+    "graded_ndcg@10": 0.0119,
+    "graded_ndcg@10_ci95": [
+      0.0049,
+      0.0212
+    ],
+    "recall@20_positive_only": 0.064,
+    "positive_only_eval_users": 344,
+    "mrr@10": 0.0091,
+    "catalog_coverage@20": 0.0228,
+    "catalog_coverage@100": 0.0837,
+    "intra_list_diversity": 0.8257,
+    "novelty_bits": 10.27,
+    "latency_p50_ms": 0.05,
+    "latency_p95_ms": 0.09
+  },
+  "Item-based CF": {
+    "recall@20": 0.114,
+    "recall@20_ci95": [
+      0.086,
+      0.144
+    ],
+    "recall@100": 0.332,
+    "ndcg@10": 0.0324,
+    "ndcg@10_ci95": [
+      0.0215,
+      0.0441
+    ],
+    "graded_ndcg@10": 0.0324,
+    "graded_ndcg@10_ci95": [
+      0.0215,
+      0.0441
+    ],
+    "recall@20_positive_only": 0.1424,
+    "positive_only_eval_users": 344,
+    "mrr@10": 0.0218,
+    "catalog_coverage@20": 0.1145,
+    "catalog_coverage@100": 0.4019,
+    "intra_list_diversity": 0.7212,
+    "novelty_bits": 9.38,
+    "latency_p50_ms": 0.75,
+    "latency_p95_ms": 3.42
+  },
+  "Content-based": {
+    "recall@20": 0.04,
+    "recall@20_ci95": [
+      0.024,
+      0.058
+    ],
+    "recall@100": 0.108,
+    "ndcg@10": 0.0094,
+    "ndcg@10_ci95": [
+      0.0038,
+      0.0165
+    ],
+    "graded_ndcg@10": 0.0094,
+    "graded_ndcg@10_ci95": [
+      0.0038,
+      0.0165
+    ],
+    "recall@20_positive_only": 0.0407,
+    "positive_only_eval_users": 344,
+    "mrr@10": 0.0062,
+    "catalog_coverage@20": 0.3481,
+    "catalog_coverage@100": 0.8094,
+    "intra_list_diversity": 0.0637,
+    "novelty_bits": 12.96,
+    "latency_p50_ms": 0.17,
+    "latency_p95_ms": 0.25
+  },
+  "Two-Tower (ANN Retrieval)": {
+    "recall@20": 0.158,
+    "recall@20_ci95": [
+      0.126,
+      0.192
+    ],
+    "recall@100": 0.358,
+    "ndcg@10": 0.0445,
+    "ndcg@10_ci95": [
+      0.0299,
+      0.0596
+    ],
+    "graded_ndcg@10": 0.0445,
+    "graded_ndcg@10_ci95": [
+      0.0299,
+      0.0596
+    ],
+    "recall@20_positive_only": 0.1541,
+    "positive_only_eval_users": 344,
+    "mrr@10": 0.0331,
+    "catalog_coverage@20": 0.8109,
+    "catalog_coverage@100": 0.9974,
+    "intra_list_diversity": 0.4505,
+    "novelty_bits": 12.2,
+    "latency_p50_ms": 1.72,
+    "latency_p95_ms": 2.53
+  },
+  "Two-Tower + LightGBM Ranker": {
+    "recall@20": 0.224,
+    "recall@20_ci95": [
+      0.188,
+      0.264
+    ],
+    "recall@100": 0.482,
+    "ndcg@10": 0.0659,
+    "ndcg@10_ci95": [
+      0.0495,
+      0.0846
+    ],
+    "graded_ndcg@10": 0.0659,
+    "graded_ndcg@10_ci95": [
+      0.0495,
+      0.0846
+    ],
+    "recall@20_positive_only": 0.2297,
+    "positive_only_eval_users": 344,
+    "mrr@10": 0.0479,
+    "catalog_coverage@20": 0.4046,
+    "catalog_coverage@100": 0.6988,
+    "intra_list_diversity": 0.5836,
+    "novelty_bits": 10.21,
+    "latency_p50_ms": 10.64,
+    "latency_p95_ms": 14.17
+  },
+  "Full Pipeline (Retrieval + Ranker + MMR)": {
+    "recall@20": 0.212,
+    "recall@20_ci95": [
+      0.178,
+      0.248
+    ],
+    "recall@100": 0.484,
+    "ndcg@10": 0.0613,
+    "ndcg@10_ci95": [
+      0.0454,
+      0.0786
+    ],
+    "graded_ndcg@10": 0.0613,
+    "graded_ndcg@10_ci95": [
+      0.0454,
+      0.0786
+    ],
+    "recall@20_positive_only": 0.2267,
+    "positive_only_eval_users": 344,
+    "mrr@10": 0.0444,
+    "catalog_coverage@20": 0.3999,
+    "catalog_coverage@100": 0.6967,
+    "intra_list_diversity": 0.6559,
+    "novelty_bits": 10.18,
+    "latency_p50_ms": 14.13,
+    "latency_p95_ms": 20.8,
+    "paired_delta_vs_item_cf": {
+      "delta_ndcg@10": 0.0289,
+      "delta_ndcg@10_ci95": [
+        0.0108,
+        0.0476
+      ],
+      "p_value_ndcg@10": 0.001,
+      "delta_recall@20": 0.098,
+      "delta_recall@20_ci95": [
+        0.058,
+        0.138
+      ],
+      "p_value_recall@20": 0.0
+    }
+  }
+}

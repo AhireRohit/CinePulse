@@ -1,7 +1,11 @@
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
+
+# Ensure project root in sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 import pandas as pd
@@ -25,7 +29,7 @@ def train_two_tower(
 ):
     output_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() and not settings.force_cpu else "cpu")
-    logger.info(f"Training Two-Tower model on device: {device}")
+    logger.info(f"Training Causal Two-Tower model on device: {device}")
 
     # 1. Load data
     movies_df = pd.read_parquet(data_dir / "movies.parquet")
@@ -34,30 +38,42 @@ def train_two_tower(
 
     with open(data_dir / "mappings.json") as f:
         mappings = json.load(f)
-    with open(data_dir / "user_train_histories.json") as f:
-        user_histories = json.load(f)
+
+    # Positive-only histories (rating >= 4.0) for evaluation
+    pos_hist_path = data_dir / "user_positive_histories.json"
+    full_hist_path = data_dir / "user_train_histories.json"
+    with open(pos_hist_path if pos_hist_path.exists() else full_hist_path) as f:
+        user_histories = {int(k): v for k, v in json.load(f).items()}
 
     num_users = mappings["num_users"]
     num_movies = mappings["num_movies"]
     genre_cols = [c for c in movies_df.columns if c.startswith("genre_")]
     num_genres = len(genre_cols)
 
-    logger.info(f"Dataset stats: {num_users:,} users, {num_movies:,} movies, {len(train_ratings):,} train ratings")
-
     # 2. Datasets & Loaders
+    # Training dataset: strictly causal prefix history, rating >= 4.0 (zero target leakage)
     train_dataset = MovieLensRetrievalDataset(
         ratings_df=train_ratings,
         movies_df=movies_df,
-        user_histories=user_histories,
         max_seq_len=settings.max_sequence_length,
         genre_cols=genre_cols,
+        causal=True,
+        min_rating=4.0,
     )
+    # Validation dataset: evaluation on held-out validation interaction
     val_dataset = MovieLensRetrievalDataset(
         ratings_df=val_ratings,
         movies_df=movies_df,
         user_histories=user_histories,
         max_seq_len=settings.max_sequence_length,
         genre_cols=genre_cols,
+        causal=False,
+        min_rating=4.0,
+    )
+
+    logger.info(
+        f"Causal Train Dataset samples: {len(train_dataset):,} | "
+        f"Validation Dataset samples: {len(val_dataset):,}"
     )
 
     train_loader = DataLoader(
@@ -65,7 +81,7 @@ def train_two_tower(
         batch_size=batch_size,
         shuffle=True,
         drop_last=True,
-        num_workers=0,  # 0 workers avoids Windows multiprocessing issues
+        num_workers=0,
         pin_memory=(device.type == "cuda"),
     )
     val_loader = DataLoader(
@@ -83,11 +99,12 @@ def train_two_tower(
         num_genres=num_genres,
         embedding_dim=embedding_dim,
         hidden_dim=hidden_dim,
-        temperature=0.07,
+        temperature=0.05,
+        dropout=0.1,
     ).to(device)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-5)
     scaler = torch.amp.GradScaler("cuda", enabled=(device.type == "cuda"))
 
     best_val_loss = float("inf")
@@ -156,7 +173,7 @@ def train_two_tower(
                 },
                 best_model_path,
             )
-            logger.info(f"  --> Saved new best checkpoint to {best_model_path}")
+            logger.info(f"  --> Saved new best checkpoint to {best_model_path} (Val Loss: {avg_val_loss:.4f})")
 
     # 5. Precompute item embeddings for all movies
     logger.info("Precomputing full catalog item embeddings...")
@@ -182,6 +199,15 @@ def train_two_tower(
     item_embeddings = np.vstack(item_embeddings_list)
     np.save(output_dir / "item_embeddings.npy", item_embeddings)
     logger.info(f"Item embeddings saved: shape {item_embeddings.shape} to {output_dir / 'item_embeddings.npy'}")
+
+    # 6. Build and save FAISS index
+    logger.info("Building and saving FAISS ANN index from precomputed item embeddings...")
+    faiss_index_dir = output_dir.parent / "indices"
+    from src.retrieval.faiss_index import FaissCandidateIndex
+    faiss_idx = FaissCandidateIndex(dimension=settings.embedding_dim)
+    faiss_idx.build(item_embeddings, movie_indices=np.arange(num_movies, dtype=np.int64))
+    faiss_idx.save(faiss_index_dir)
+    logger.info(f"FAISS index saved to {faiss_index_dir}")
 
 
 if __name__ == "__main__":

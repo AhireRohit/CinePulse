@@ -14,12 +14,16 @@ RANKER_FEATURE_COLS = [
     "genre_cosine",
     "log_rating_count",
     "rating_mean",
+    "rating_std",
     "bayesian_rating",
     "release_year",
+    "year_diff",
     "user_activity_count",
     "is_source_two_tower",
     "is_source_item_cf",
     "is_source_popularity",
+    "cf_x_bayesian",
+    "tt_x_genre",
 ]
 
 

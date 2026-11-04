@@ -1,0 +1,487 @@
+[
+  {
+    "user_idx": 12,
+    "username": "elena_vance",
+    "display_name": "Elena Vance",
+    "avatar_color": "#3B82F6",
+    "bio": "Curator of mind-bending Sci-Fi, artificial intelligence cinema, and cerebral mysteries.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Sci-Fi",
+      "Mystery",
+      "Thriller"
+    ]
+  },
+  {
+    "user_idx": 45,
+    "username": "marcus_sterling",
+    "display_name": "Marcus Sterling",
+    "avatar_color": "#D4AF37",
+    "bio": "Aficionado of classic 1940s-70s Film-Noir, gritty crime sagas, and detective thrillers.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Crime",
+      "Mystery"
+    ]
+  },
+  {
+    "user_idx": 88,
+    "username": "aria_thorne",
+    "display_name": "Aria Thorne",
+    "avatar_color": "#EC4899",
+    "bio": "Drawn to quiet character studies, independent European dramas, and poignant visual storytelling.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Drama",
+      "Romance",
+      "Animation"
+    ]
+  },
+  {
+    "user_idx": 120,
+    "username": "leo_rivera",
+    "display_name": "Leo Rivera",
+    "avatar_color": "#EF4444",
+    "bio": "High-octane blockbusters, cinematic space operas, and edge-of-your-seat action spectacles.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Action",
+      "Adventure",
+      "Sci-Fi"
+    ]
+  },
+  {
+    "user_idx": 6041,
+    "username": "alexandra_noir",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6042,
+    "username": "alexandra_noir_1793746468",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6043,
+    "username": "alexandra_noir_1793746483",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6044,
+    "username": "alexandra_noir_1793746545",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6045,
+    "username": "alexandra_noir_1793746666",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6046,
+    "username": "alexandra_noir_1793753191",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6047,
+    "username": "alexandra_noir_1793756603",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6048,
+    "username": "alexandra_noir_1793756665",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6049,
+    "username": "alexandra_noir_1793759089",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6050,
+    "username": "alexandra_noir_1793760460",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6051,
+    "username": "alexandra_noir_1793762321",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6052,
+    "username": "alexandra_noir_1793794016",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6053,
+    "username": "alexandra_noir_1793795331",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6054,
+    "username": "alexandra_noir_1793795422",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6055,
+    "username": "alexandra_noir_1793795465",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6056,
+    "username": "alexandra_noir_1793806750",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6057,
+    "username": "chloe_bennett",
+    "display_name": "Chloe Bennett",
+    "avatar_color": "#D4AF37",
+    "bio": null,
+    "auth_token": null,
+    "preferred_genres": [
+      "Comedy",
+      "Romance"
+    ]
+  },
+  {
+    "user_idx": 6058,
+    "username": "alexandra_noir_1793807044",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6059,
+    "username": "alexandra_noir_1793807092",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6060,
+    "username": "chloe_3204fc00",
+    "display_name": "Chloe Bennett",
+    "avatar_color": "#D4AF37",
+    "bio": null,
+    "auth_token": null,
+    "preferred_genres": [
+      "Comedy",
+      "Romance"
+    ]
+  },
+  {
+    "user_idx": 6061,
+    "username": "alexandra_noir_1793807477",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6062,
+    "username": "chloe_f0f2ec2d",
+    "display_name": "Chloe Bennett",
+    "avatar_color": "#D4AF37",
+    "bio": null,
+    "auth_token": null,
+    "preferred_genres": [
+      "Comedy",
+      "Romance"
+    ]
+  },
+  {
+    "user_idx": 6063,
+    "username": "alexandra_noir_1793807515",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6064,
+    "username": "alexandra_noir_1793807566",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6065,
+    "username": "chloe_36538a7c",
+    "display_name": "Chloe Bennett",
+    "avatar_color": "#D4AF37",
+    "bio": null,
+    "auth_token": null,
+    "preferred_genres": [
+      "Comedy",
+      "Romance"
+    ]
+  },
+  {
+    "user_idx": 6066,
+    "username": "chloe_0265f664",
+    "display_name": "Chloe Bennett",
+    "avatar_color": "#D4AF37",
+    "bio": null,
+    "auth_token": null,
+    "preferred_genres": [
+      "Comedy",
+      "Romance"
+    ]
+  },
+  {
+    "user_idx": 6067,
+    "username": "alexandra_noir_1793810405",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6068,
+    "username": "chloe_5b568271",
+    "display_name": "Chloe Bennett",
+    "avatar_color": "#D4AF37",
+    "bio": null,
+    "auth_token": null,
+    "preferred_genres": [
+      "Comedy",
+      "Romance"
+    ]
+  },
+  {
+    "user_idx": 6069,
+    "username": "alexandra_noir_1793818194",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6070,
+    "username": "chloe_24b9c19c",
+    "display_name": "Chloe Bennett",
+    "avatar_color": "#D4AF37",
+    "bio": null,
+    "auth_token": null,
+    "preferred_genres": [
+      "Comedy",
+      "Romance"
+    ]
+  },
+  {
+    "user_idx": 6071,
+    "username": "alexandra_noir_1793818593",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6072,
+    "username": "chloe_2df14034",
+    "display_name": "Chloe Bennett",
+    "avatar_color": "#D4AF37",
+    "bio": null,
+    "auth_token": null,
+    "preferred_genres": [
+      "Comedy",
+      "Romance"
+    ]
+  },
+  {
+    "user_idx": 6073,
+    "username": "alexandra_noir_1793820408",
+    "display_name": "Alexandra Noir",
+    "avatar_color": "#D4AF37",
+    "bio": "Cold-start evaluation user specializing in vintage mystery cinema.",
+    "auth_token": null,
+    "preferred_genres": [
+      "Film-Noir",
+      "Mystery",
+      "Crime"
+    ]
+  },
+  {
+    "user_idx": 6074,
+    "username": "chloe_45b33502",
+    "display_name": "Chloe Bennett",
+    "avatar_color": "#D4AF37",
+    "bio": null,
+    "auth_token": null,
+    "preferred_genres": [
+      "Comedy",
+      "Romance"
+    ]
+  }
+]

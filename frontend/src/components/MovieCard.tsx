@@ -90,6 +90,8 @@ export const MovieCard: React.FC<MovieCardProps> = ({
   const [dismissed, setDismissed] = useState(false);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [currentRating, setCurrentRating] = useState<number | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   if (dismissed) {
     return null;
@@ -97,6 +99,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({
 
   const primaryGenre = movie.genres[0] || 'Drama';
   const theme = GENRE_THEMES[primaryGenre] || GENRE_THEMES['Drama'];
+  const hasValidPoster = Boolean(movie.poster_url) && !imageError;
 
   const handleAction = (
     e: React.MouseEvent,
@@ -125,11 +128,30 @@ export const MovieCard: React.FC<MovieCardProps> = ({
 
   return (
     <div
+      data-testid="movie-card"
       onClick={() => onOpenDetail(movie.movie_idx)}
       className={`group relative flex-shrink-0 w-48 sm:w-56 cursor-pointer select-none rounded-xl bg-surface border border-border hover:border-accent/50 hover:shadow-2xl ${theme.glow} transition-all duration-300 transform hover:-translate-y-1.5 overflow-hidden flex flex-col`}
     >
       {/* Poster / Typographic Art Cover */}
       <div className={`relative h-64 sm:h-72 w-full bg-gradient-to-br ${theme.gradient} p-4 flex flex-col justify-between border-b border-border/40 overflow-hidden`}>
+        {/* Real Movie Poster Artwork (when available) */}
+        {hasValidPoster && (
+          <>
+            <img
+              src={movie.poster_url}
+              alt={movie.title}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+                imageLoaded ? 'opacity-85' : 'opacity-0'
+              }`}
+              loading="lazy"
+            />
+            {/* Dramatic gradient overlay protecting typography and controls */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/60 pointer-events-none" />
+          </>
+        )}
+
         {/* Subtle Watermark Genre Typography in Background */}
         <div className="absolute -right-4 -bottom-3 text-[52px] sm:text-[60px] font-black tracking-tighter text-white/[0.04] pointer-events-none select-none font-display leading-none">
           {theme.watermark}
@@ -161,13 +183,15 @@ export const MovieCard: React.FC<MovieCardProps> = ({
 
         {/* Center Title Display */}
         <div className="my-auto z-10 text-center px-1">
-          <div className="w-8 h-8 rounded-full bg-black/40 border border-white/10 flex items-center justify-center mx-auto mb-2 text-white/50 group-hover:text-accent group-hover:border-accent/40 group-hover:scale-110 transition-all">
-            <Film className="w-4 h-4" />
-          </div>
-          <h4 className="font-display font-bold text-base sm:text-lg text-gray-100 tracking-tight leading-snug line-clamp-3 group-hover:text-accent transition-colors">
+          {!hasValidPoster && (
+            <div className="w-8 h-8 rounded-full bg-black/40 border border-white/10 flex items-center justify-center mx-auto mb-2 text-white/50 group-hover:text-accent group-hover:border-accent/40 group-hover:scale-110 transition-all">
+              <Film className="w-4 h-4" />
+            </div>
+          )}
+          <h4 className="font-display font-bold text-base sm:text-lg text-gray-100 tracking-tight leading-snug line-clamp-3 group-hover:text-accent transition-colors drop-shadow-md">
             {movie.title}
           </h4>
-          <span className="block mt-1 font-mono text-[11px] text-muted">
+          <span className="block mt-1 font-mono text-[11px] text-gray-300/90 drop-shadow">
             {movie.release_year} • {primaryGenre}
           </span>
         </div>

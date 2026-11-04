@@ -1,4 +1,5 @@
 import json
+import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, select
@@ -24,6 +25,9 @@ router = APIRouter()
 
 # Global engine reference injected on startup
 _recommendation_engine = None
+
+# Pre-seeded demo user IDs protected from permanent database mutation
+DEMO_USER_IDXS = {12, 45, 88, 120}
 
 
 def set_recommendation_engine(engine):
@@ -83,6 +87,7 @@ async def create_user(req: CreateUserRequest, db: AsyncSession = Depends(get_db)
     max_idx_result = await db.execute(select(User.user_idx).order_by(desc(User.user_idx)).limit(1))
     highest_idx = max_idx_result.scalar_one_or_none() or engine.num_users
     new_user_idx = max(highest_idx + 1, engine.num_users + 1)
+    user_token = secrets.token_urlsafe(24)
 
     new_user = User(
         user_idx=new_user_idx,
@@ -90,6 +95,7 @@ async def create_user(req: CreateUserRequest, db: AsyncSession = Depends(get_db)
         display_name=req.display_name,
         avatar_color=req.avatar_color,
         bio=req.bio,
+        auth_token=user_token,
     )
     db.add(new_user)
     await db.flush()
@@ -103,7 +109,8 @@ async def create_user(req: CreateUserRequest, db: AsyncSession = Depends(get_db)
     await db.commit()
 
     # Seed the engine session with onboarding preferences
-    engine.get_user_session(new_user_idx)
+    sess = engine.get_user_session(new_user_idx)
+    sess["preferred_genres"] = list(req.preferred_genres)
     for m_idx in req.favorite_movies:
         engine.record_feedback(new_user_idx, m_idx, "like")
 
@@ -113,6 +120,7 @@ async def create_user(req: CreateUserRequest, db: AsyncSession = Depends(get_db)
         display_name=new_user.display_name,
         avatar_color=new_user.avatar_color,
         bio=new_user.bio,
+        auth_token=user_token,
         preferred_genres=req.preferred_genres,
     )
 
@@ -135,43 +143,53 @@ async def get_recommendations(
     )
     recs = rec_result["recommendations"]
 
-    # Select hero featured item
-    hero_item = recs[0] if recs else None
+    # Select hero featured item: prioritize quality-filtered candidate from engine
+    hero_item = rec_result.get("hero_featured")
 
     # Categorized rails
     rails = {}
     rails["Top Picks For You"] = recs[:10]
 
-    # Rail 2: Because you watched...
+    # Rail 2: Because you watched... (anchor strictly on user's positive interactions)
     session = engine.get_user_session(user_id)
     history = session["history"]
     if history:
-        last_m = history[-1]
+        # Select user's most recent positive interaction (r >= 3.5 or like, never a dislike)
+        positive_history = [
+            m for m in reversed(history)
+            if m not in session["dislikes"] and session.get("ratings", {}).get(m, 4.0) >= 3.5
+        ]
+        last_m = positive_history[0] if positive_history else history[-1]
         last_title = engine.movies_df.iloc[last_m]["clean_title"]
-        # Fetch items similar to last movie using Item-CF or Content
+        # Fetch items similar to last positive movie using Item-CF
         similar = engine.item_cf.get_similar_items(last_m, top_k=8)
         consumed = set(history) | session["dismissals"]
         similar_items = []
         for idx, score in similar:
             if idx not in consumed:
                 row = engine.movies_df.iloc[idx]
+                m_id = int(row["movieId"])
+                bayes = float(row.get("bayesian_rating", row["rating_mean"]))
                 similar_items.append(
                     RecommendationItem(
                         rank=len(similar_items) + 1,
                         movie_idx=idx,
-                        movieId=int(row["movieId"]),
+                        movieId=m_id,
                         title=row["clean_title"],
                         full_title=row["title"],
                         release_year=int(row["release_year"]),
                         genres=row["genres"].split("|") if isinstance(row["genres"], str) else [],
                         rating_mean=round(float(row["rating_mean"]), 2),
                         rating_count=int(row["rating_count"]),
+                        bayesian_rating=round(bayes, 2),
                         final_score=round(float(score), 4),
                         relevance_score=round(float(score), 4),
+                        match_percentage=int(round(75 + 20 * min(1.0, float(score)))),
                         diversity_penalty=0.0,
                         novelty_score=0.2,
                         retrieval_source="item_cf",
-                        reason=f"Similar to {last_title}",
+                        reason=f"Because you enjoyed {last_title}",
+                        poster_url=engine.movie_posters.get(m_id),
                     )
                 )
         if similar_items:
@@ -188,11 +206,12 @@ async def get_recommendations(
     trending_items = []
     for rank_idx, (idx, score) in enumerate(trending_raw):
         row = engine.movies_df.iloc[idx]
+        m_id = int(row["movieId"])
         trending_items.append(
             RecommendationItem(
                 rank=rank_idx + 1,
                 movie_idx=idx,
-                movieId=int(row["movieId"]),
+                movieId=m_id,
                 title=row["clean_title"],
                 full_title=row["title"],
                 release_year=int(row["release_year"]),
@@ -205,6 +224,7 @@ async def get_recommendations(
                 novelty_score=0.1,
                 retrieval_source="popularity",
                 reason="Critically acclaimed & widely watched",
+                poster_url=engine.movie_posters.get(m_id),
             )
         )
     rails["Trending & Highly Rated"] = trending_items
@@ -233,20 +253,24 @@ async def post_feedback(req: FeedbackRequest, db: AsyncSession = Depends(get_db)
         rating=req.rating,
     )
 
-    # 2. Persist to database
-    interaction = Interaction(
-        user_idx=req.user_idx,
-        movie_idx=req.movie_idx,
-        action=req.action,
-        rating=req.rating,
-    )
-    db.add(interaction)
+    # 2. Persist to database only for non-demo users to preserve demo integrity
+    if req.user_idx not in DEMO_USER_IDXS:
+        interaction = Interaction(
+            user_idx=req.user_idx,
+            movie_idx=req.movie_idx,
+            action=req.action,
+            rating=req.rating,
+        )
+        db.add(interaction)
 
-    if req.action == "save":
-        saved = SavedMovie(user_idx=req.user_idx, movie_idx=req.movie_idx)
-        db.add(saved)
+        if req.action == "save":
+            saved = SavedMovie(user_idx=req.user_idx, movie_idx=req.movie_idx)
+            db.add(saved)
 
-    await db.commit()
+        await db.commit()
+        feedback_msg = f"Recorded '{req.action}'. Saved persistently to user account."
+    else:
+        feedback_msg = f"Recorded '{req.action}' in active session. Demo account baseline remains protected."
 
     session = engine.get_user_session(req.user_idx)
     summary = {
@@ -261,7 +285,7 @@ async def post_feedback(req: FeedbackRequest, db: AsyncSession = Depends(get_db)
         user_idx=req.user_idx,
         movie_idx=req.movie_idx,
         action=req.action,
-        message=f"Recorded '{req.action}'. Recommendations will adapt instantly.",
+        message=feedback_msg,
         session_summary=summary,
     )
 
@@ -273,15 +297,17 @@ async def get_movie(movie_id: int):
         raise HTTPException(status_code=404, detail="Movie not found.")
 
     row = engine.movies_df.iloc[movie_id]
+    m_id = int(row["movieId"])
     similar_raw = engine.item_cf.get_similar_items(movie_id, top_k=6)
     similar_items = []
     for idx, score in similar_raw:
         sim_row = engine.movies_df.iloc[idx]
+        sim_mid = int(sim_row["movieId"])
         similar_items.append(
             RecommendationItem(
                 rank=len(similar_items) + 1,
                 movie_idx=idx,
-                movieId=int(sim_row["movieId"]),
+                movieId=sim_mid,
                 title=sim_row["clean_title"],
                 full_title=sim_row["title"],
                 release_year=int(sim_row["release_year"]),
@@ -294,12 +320,13 @@ async def get_movie(movie_id: int):
                 novelty_score=0.2,
                 retrieval_source="item_cf",
                 reason="Similar themes & co-ratings",
+                poster_url=engine.movie_posters.get(sim_mid),
             )
         )
 
     return MovieDetailResponse(
         movie_idx=movie_id,
-        movieId=int(row["movieId"]),
+        movieId=m_id,
         title=row["clean_title"],
         full_title=row["title"],
         release_year=int(row["release_year"]),
@@ -307,6 +334,7 @@ async def get_movie(movie_id: int):
         rating_mean=round(float(row["rating_mean"]), 2),
         rating_count=int(row["rating_count"]),
         bayesian_rating=round(float(row["bayesian_rating"]), 2),
+        poster_url=engine.movie_posters.get(m_id),
         overview=f"A critically noted {row['release_year']} release featuring {row['genres']}. Rated {round(float(row['rating_mean']), 1)}/5.0 across {int(row['rating_count']):,} community reviews.",
         similar_movies=similar_items,
     )
@@ -327,11 +355,12 @@ async def search_movies(q: str = Query(min_length=1)):
     results = []
     for rank_idx, (_, row) in enumerate(matches.iterrows()):
         idx = int(row["movie_idx"])
+        row_mid = int(row["movieId"])
         results.append(
             RecommendationItem(
                 rank=rank_idx + 1,
                 movie_idx=idx,
-                movieId=int(row["movieId"]),
+                movieId=row_mid,
                 title=row["clean_title"],
                 full_title=row["title"],
                 release_year=int(row["release_year"]),
@@ -344,6 +373,7 @@ async def search_movies(q: str = Query(min_length=1)):
                 novelty_score=0.3,
                 retrieval_source="search",
                 reason="Search query match",
+                poster_url=engine.movie_posters.get(row_mid),
             )
         )
 

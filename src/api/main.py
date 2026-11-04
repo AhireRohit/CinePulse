@@ -1,18 +1,25 @@
 import json
+import time
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import torch
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import select
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 
-from src.api.routes import router, set_recommendation_engine
+from src.api.routes import DEMO_USER_IDXS, router, set_recommendation_engine
 from src.core.config import settings
 from src.core.logging import logger
-from src.db.database import init_db
+from src.db.database import AsyncSessionLocal, init_db
+from src.db.models import Interaction, OnboardingPreference, SavedMovie, User
 from src.models.two_tower import TwoTowerRecommender
 from src.pipeline.engine import RecommendationEngine
 
@@ -71,6 +78,12 @@ async def lifespan(app: FastAPI):
             tt_model.eval()
             engine.two_tower_model = tt_model
 
+        # Load Item Embeddings
+        item_embeddings_path = settings.models_dir / "item_embeddings.npy"
+        if item_embeddings_path.exists():
+            logger.info("Loading precomputed item embeddings...")
+            engine.item_embeddings = np.load(item_embeddings_path)
+
         # Load FAISS Index
         faiss_index_path = settings.indices_dir / "item_index.faiss"
         if faiss_index_path.exists():
@@ -83,6 +96,46 @@ async def lifespan(app: FastAPI):
             logger.info("Loading LightGBM Ranker...")
             engine.ranker.load(ranker_path)
 
+        # Restore persistent user feedback and session state from SQLite
+        logger.info("Restoring persisted user sessions and feedback from database...")
+        async with AsyncSessionLocal() as db_session:
+            # Restore users and onboarding preferences
+            users_res = await db_session.execute(select(User))
+            for u in users_res.scalars().all():
+                sess = engine.get_user_session(u.user_idx)
+                pref_res = await db_session.execute(
+                    select(OnboardingPreference).where(OnboardingPreference.user_idx == u.user_idx)
+                )
+                pref = pref_res.scalar_one_or_none()
+                if pref:
+                    if pref.genres_json:
+                        sess["preferred_genres"] = json.loads(pref.genres_json)
+                    if pref.favorite_movies_json:
+                        for m_idx in json.loads(pref.favorite_movies_json):
+                            if m_idx not in sess["history"]:
+                                sess["history"].append(m_idx)
+                                sess["likes"].add(m_idx)
+
+            # Restore all persistent feedback interactions (skipping demo user IDs to preserve baseline purity)
+            inter_res = await db_session.execute(select(Interaction).order_by(Interaction.id))
+            for inter in inter_res.scalars().all():
+                if inter.user_idx not in DEMO_USER_IDXS:
+                    engine.record_feedback(
+                        user_idx=inter.user_idx,
+                        movie_idx=inter.movie_idx,
+                        action=inter.action,
+                        rating=inter.rating,
+                    )
+
+            # Restore saved movies (skipping demo user IDs)
+            saved_res = await db_session.execute(select(SavedMovie))
+            for saved in saved_res.scalars().all():
+                if saved.user_idx not in DEMO_USER_IDXS:
+                    sess = engine.get_user_session(saved.user_idx)
+                    sess["saves"].add(saved.movie_idx)
+                    if saved.movie_idx not in sess["history"]:
+                        sess["history"].append(saved.movie_idx)
+
         set_recommendation_engine(engine)
         logger.info("CinePulse Recommendation Engine successfully loaded and ready.")
     else:
@@ -92,12 +145,61 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down CinePulse application...")
 
 
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """
+    Sliding-window IP rate limiter and security header middleware.
+    Prevents scraping, feedback flooding, and DoS attacks on public deployments.
+    """
+    def __init__(self, app, max_read_per_min: int = 180, max_write_per_min: int = 45):
+        super().__init__(app)
+        self.max_read = max_read_per_min
+        self.max_write = max_write_per_min
+        self.ip_timestamps: dict[str, list[float]] = defaultdict(list)
+
+    async def dispatch(self, request: Request, call_next):
+        # Bypass rate limiting for static frontend assets
+        path = request.url.path
+        if path.startswith("/assets/") or path.endswith((".ico", ".png", ".jpg", ".js", ".css")):
+            response = await call_next(request)
+            return response
+
+        client_ip = request.client.host if request.client else "127.0.0.1"
+        now = time.time()
+        window_start = now - 60.0
+
+        # Purge timestamps older than 60s
+        history = [t for t in self.ip_timestamps[client_ip] if t > window_start]
+        self.ip_timestamps[client_ip] = history
+
+        limit = self.max_write if request.method in ("POST", "PUT", "DELETE") else self.max_read
+        if len(history) >= limit:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Rate limit exceeded. Please wait 60 seconds before making additional requests."},
+                headers={"Retry-After": "60"},
+            )
+
+        self.ip_timestamps[client_ip].append(now)
+
+        response = await call_next(request)
+
+        # Standard Security Headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    description="Production-Grade Multi-Stage Recommendation Platform (Two-Tower Retrieval, LightGBM Ranking, MMR Diversity, Session Personalization)",
+    description="Multi-Stage Recommendation Platform (Two-Tower Retrieval, LightGBM Ranking, MMR Diversity, Session Personalization)",
     lifespan=lifespan,
 )
+
+# Security & Rate Limiting Middleware
+app.add_middleware(RateLimitMiddleware)
 
 # CORS Middleware
 app.add_middleware(

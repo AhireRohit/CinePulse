@@ -26,8 +26,8 @@ class Settings(BaseSettings):
     max_sequence_length: int = 20
     retrieval_candidates_k: int = 100
     ranking_top_k: int = 30
-    default_mmr_lambda: float = 0.65
-    novelty_weight: float = 0.15
+    default_mmr_lambda: float = 0.85
+    novelty_weight: float = 0.03
 
     # TMDB API (Optional: enrich poster / backdrop / synopsis)
     tmdb_api_key: str | None = None

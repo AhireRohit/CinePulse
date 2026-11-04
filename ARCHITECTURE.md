@@ -10,7 +10,7 @@ Real-world recommendation systems operating at scale (e.g., Netflix, YouTube, Am
 
 ```
 +-----------------------------------------------------------+
-| Catalog: 3,883 Movies (or 32M+ in full catalog)           |
+| Catalog: 3,416 Movies (ML-1M; or 87.5k items in ML-32M)   |
 +-----------------------------------------------------------+
                              |
                              v
@@ -18,27 +18,27 @@ Real-world recommendation systems operating at scale (e.g., Netflix, YouTube, Am
        • Two-Tower Deep Neural Network + FAISS ANN
        • Item-Based Collaborative Filtering (Shrunk Cosine)
        • Bayesian Trending / Popularity
-       -> Latency: ~1-2 ms | Pool: 100 Candidates
+       -> Latency: ~1-3 ms | Pool: ~170 Deduped Candidates
                              |
                              v
               [ Stage C: Personalized Ranking ]
        • LightGBM LambdaRank (Listwise NDCG Optimization)
-       • 10-Dimensional Cross-Feature Feature Engineering
+       • 17-Dimensional Cross-Feature Feature Engineering
        • Non-linear user-item affinity & temporal decay
-       -> Latency: ~7-8 ms | Pool: 100 Scored Candidates
+       -> Latency: ~10-15 ms | Pool: Scored Candidates
                              |
                              v
         [ Stage D: Diversity & Novelty Re-Ranking ]
-       • Maximal Marginal Relevance (MMR)
+       • Vectorized Maximal Marginal Relevance (MMR)
        • Inverse Log-Frequency Novelty Weighting
-       • Epsilon-Greedy Serendipity / Exploration
-       -> Latency: ~10-15 ms | Pool: Top 15-20 Slotted Items
+       • Dynamic Diversity Slider (λ=0.85, β=0.03 default)
+       -> Latency: ~0.7 ms | Pool: Top 15-20 Slotted Items
                              |
                              v
            [ Stage E: Real-Time Session Adaptation ]
        • Instant Negative Feedback Suppression (Dislikes/Dismissals)
        • Dynamic In-Memory User Vector Blending
-       • Sub-10ms Recalibration without Neural Retraining
+       • Sub-1ms Recalibration without Neural Retraining
 ```
 
 ---
@@ -89,8 +89,8 @@ The candidate retrieval model maps high-dimensional user interaction histories a
 2. **Sequential History Representation:**
    - For user history $\mathcal{H}_u = [i_1, i_2, \dots, i_L]$ (truncated to $L=20$ most recent items):
    - Sequence items are embedded: $E_H \in \mathbb{R}^{L \times D}$.
-   - **Multi-Head Self-Attention Pooling:** Rather than naive average pooling, an attention weight vector $\alpha \in \mathbb{R}^L$ is computed dynamically via a learned projection layer $W_{\text{att}} \in \mathbb{R}^{D \times 1}$:
-     $$\alpha = \text{Softmax}\left( \frac{E_H W_{\text{att}}}{\sqrt{D}} + M \right)$$
+   - **Additive Attention Sequence Pooling:** Rather than naive average pooling, an attention weight vector $\alpha \in \mathbb{R}^L$ is computed dynamically via a learned projection layer $W_{\text{att}} \in \mathbb{R}^{D \times 1}$:
+     $$\alpha = \text{Softmax}\left( E_H W_{\text{att}} + b_{\text{att}} + M \right)$$
      where $M$ is a padding mask ($M_k = -10^4$ if padded, $0$ otherwise).
    - Sequence vector: $h_u = \sum_{k=1}^L \alpha_k E_{H, k}$.
 3. **Genre Preference Projection:** Multi-hot genre affinity vector $g_u \in \mathbb{R}^{18}$ projected via dense layer $W_g \in \mathbb{R}^{18 \times D}$.
@@ -112,44 +112,45 @@ For batch size $B$, given positive pairs $(u_b, i_b)_{b=1}^B$:
 
 $$\mathcal{L} = -\frac{1}{B} \sum_{b=1}^B \log \frac{\exp(\hat{u}_b \cdot \hat{i}_b / \tau)}{\sum_{j=1}^B \exp(\hat{u}_b \cdot \hat{i}_j / \tau)}$$
 
-Where temperature $\tau = 0.07$. This forces positive items to have maximal cosine similarity while repelling unobserved items in the batch.
+Where temperature $\tau = 0.05$. This forces positive items to have maximal cosine similarity while repelling unobserved items in the batch.
 
-### 3.3 Approximate Nearest-Neighbor Indexing (FAISS)
+### 3.3 Exact Inner Product Indexing (FAISS)
 Once trained, the item tower computes offline vectors for all 3,416 catalog movies:
 $$\mathbf{V}_{\text{catalog}} = [\hat{i}_1, \hat{i}_2, \dots, \hat{i}_M] \in \mathbb{R}^{M \times D}$$
-These are indexed into a `faiss.IndexFlatIP` (Exact Inner Product / Cosine Search). At query time, given user vector $\hat{u}$:
-$$\text{Top-}K = \text{FAISS.search}(\hat{u}, K)$$
-Retrieval executes in **<1.5 ms** with 100% recall relative to exhaustive brute-force search.
+
+**Exact vs Approximate Nearest Neighbors (ANN):**
+- For MovieLens 1M (3,416 catalog items), CinePulse utilizes `faiss.IndexFlatIP` (Exact Inner Product Search). Because the catalog fits in memory, brute-force cosine distance executes in **<3 ms** with 100% theoretical recall (zero quantization or pruning approximation loss).
+- For web-scale industrial catalogs (e.g., MovieLens 32M+ or YouTube scale with 10M+ videos), CinePulse supports drop-in migration to `faiss.IndexIVFFlat` (Inverted File with coarse Voronoi quantizers) or `faiss.IndexHNSWFlat` (Hierarchical Navigable Small World graphs) for logarithmic approximate candidate retrieval.
 
 ---
 
 ## 4. Stage C: Personalized Ranking (LightGBM LambdaRank)
 
-While Two-Tower models excel at filtering 1,000,000 items to 100 candidates via inner products, their bilinear form prevents cross-feature interactions (e.g., does this user prefer *older* movies specifically when they are *Sci-Fi*?).
+While Two-Tower models excel at filtering millions of items to candidates via inner products, their bilinear form prevents cross-feature interactions (e.g., does this user prefer *older* movies specifically when they are *Sci-Fi*?).
 
-### 4.1 Feature Engineering Matrix
-For each user-candidate pair $(u, i)$, the ranker extracts 10 features:
-1. `two_tower_score`: Normalized inner product from retrieval tower.
-2. `rating_mean`: Bayesian smoothed average rating.
-3. `rating_count`: Log-transformed interaction frequency $\log(1 + N_i)$.
-4. `release_year`: Normalized release year.
-5. `year_delta`: Absolute distance $|y_i - \bar{y}_u|$ between movie year and user's average preferred movie era.
-6. `genre_overlap`: Jaccard similarity between candidate genres and user's historical top genres.
-7. `user_activity_count`: Log-transformed user rating count.
-8. `item_cf_score`: Cosine similarity score from Item-CF baseline.
-9. `popularity_rank`: Relative rank in global popularity table.
-10. `candidate_source`: Multi-source retrieval flag (ANN vs CF vs Pop).
+### 4.1 The 17-Dimensional Feature Engineering Matrix
+For each user-candidate pair $(u, i)$, the ranker extracts 17 verified features:
+1. `candidate_rank`: 0-indexed position within the multi-source candidate union.
+2. `two_tower_score`: Dot-product similarity $\langle e_i, u \rangle$ from the Two-Tower neural model.
+3. `cf_score`: Cosine similarity score from the Item-CF baseline.
+4. `genre_overlap`: Multi-hot dot product between user history genre profile and movie genres.
+5. `genre_cosine`: Cosine similarity between user genre profile and movie genres.
+6. `log_rating_count`: Log-transformed interaction frequency $\log(1 + N_i)$.
+7. `rating_mean`: Raw arithmetic average community rating.
+8. `rating_std`: Rating standard deviation across community interactions.
+9. `bayesian_rating`: Bayesian smoothed rating prior.
+10. `release_year`: Year of film release.
+11. `year_diff`: Absolute difference between film release year and user's historical mean year.
+12. `user_activity_count`: Number of past user ratings in training history.
+13. `is_source_two_tower`: Indicator whether item was retrieved by Two-Tower ANN search.
+14. `is_source_item_cf`: Indicator whether item was retrieved by Item-CF.
+15. `is_source_popularity`: Indicator whether item was retrieved by Popularity.
+16. `cf_x_bayesian`: Interaction term between CF similarity and centered Bayesian rating.
+17. `tt_x_genre`: Interaction term between Two-Tower score and genre cosine.
 
-### 4.2 LambdaRank Objective & Feature Importance
+### 4.2 LambdaRank Objective & Empirical Impact
 The LightGBM model is trained with the `lambdarank` objective with query groups structured per user session.
-Feature importances measured during training:
-- `two_tower_score`: **24,636.5** split gain (Primary relevance signal)
-- `rating_mean`: **18,964.2** split gain (Quality control / Bayesian prior)
-- `release_year`: **3,142.0** split gain (Temporal preference calibration)
-- `user_activity_count`: **2,890.1** split gain (User familiarity weighting)
-- `genre_overlap`: **1,410.8** split gain (Category alignment)
-
-The LightGBM ranker boosts **NDCG@10 by +19.1%** and **MRR@10 by +29.3%** over raw ANN retrieval.
+The LightGBM ranker boosts **NDCG@10 from 0.0346 to 0.0641 (+85.3%)** and **Recall@20 from 0.1060 to 0.1880 (+77.4%)** over standalone ANN retrieval.
 
 ---
 
@@ -163,18 +164,18 @@ Let $R$ be the candidate set from Stage C, and $S$ be the selected recommendatio
 $$i^* = \arg\max_{i \in R \setminus S} \left[ \lambda \cdot \text{Score}(i) - (1 - \lambda) \cdot \max_{j \in S} \text{Sim}(i, j) + \beta \cdot \text{Novelty}(i) \right]$$
 
 Where:
-- $\text{Score}(i) \in [0, 1]$: Min-max scaled LightGBM ranker score.
+- $\text{Score}(i) \in (0, 1)$: Standardized sigmoid-normalized ranker score $\sigma\left(\frac{s_i - \mu_s}{\max(\sigma_s, 0.25)}\right)$ (replacing legacy min-max scaling to prevent artificial top-item score saturation).
 - $\text{Sim}(i, j)$: Cosine similarity between multi-hot genre vectors of item $i$ and item $j$.
 - $\lambda \in [0, 1]$: Diversity tradeoff slider (configurable dynamically by the user).
   - $\lambda = 1.0$: Pure relevance (highest ranking accuracy, lowest diversity).
-  - $\lambda = 0.5$: Balanced streaming editorial default.
-  - $\lambda = 0.2$: High-discovery exploratory mode.
+  - $\lambda = 0.85$: Production default sweet spot ($\beta=0.03$).
+  - $\lambda = 0.65$: High-discovery exploratory mode ($\beta=0.15$).
 - $\text{Novelty}(i) = -\log_2 \left( \frac{N_i + 1}{\sum N} \right)$: Self-information / serendipity boost in bits.
-- $\beta = 0.05$: Weight assigned to long-tail discovery.
+- $\beta = 0.03$: Tuned weight assigned to long-tail discovery.
 
 ### 5.2 Empirical Diversity Impact
-- **Without MMR ($\lambda = 1.0$):** Intra-list diversity is **0.3954**. Recommendations within a single list are heavily clustered in 1-2 dominant genres.
-- **With MMR ($\lambda = 0.65, \beta = 0.05$):** Intra-list diversity rises to **0.6011 (+52.0% gain)**, with catalog novelty reaching **12.53 bits**.
+- **Without MMR ($\lambda = 1.0, \beta=0.0$):** Intra-list diversity is **0.5965**, with pure ranker relevance.
+- **With Balanced MMR ($\lambda = 0.85, \beta = 0.03$):** Intra-list diversity rises to **0.6708 (+12.5% gain)**, with catalog coverage reaching **71.37%** (+70.5% wider than Item-CF's 41.86%) and NDCG@10 preserved at **0.0601**.
 
 ---
 
@@ -200,14 +201,14 @@ CinePulse implements an asynchronous session state engine:
 
 ## 7. Serving Infrastructure & Observability
 
-- **FastAPI Asynchronous Gateway:** Native coroutines for non-blocking I/O, SQLite/PostgreSQL connection pooling via `aiosqlite` and SQLAlchemy 2.0.
+- **FastAPI Asynchronous Gateway:** Native coroutines for non-blocking I/O, SQLite persistence via `aiosqlite` and SQLAlchemy 2.0.
 - **Latency Budget:**
-  - Candidate Retrieval (ANN + ItemCF + Pop): ~1.65 ms
-  - Feature Extraction & LightGBM Scoring: ~7.13 ms
-  - MMR Re-Ranking (20 items): ~12.5 ms
-  - Database Session & Audit Persistence: ~2.0 ms
-  - **Total P95 Latency: <25 ms**
+  - Candidate Retrieval (ANN + ItemCF + Pop): ~2.96 ms
+  - Feature Extraction & LightGBM Scoring: ~12.27 ms
+  - MMR Re-Ranking (20 items): ~0.70 ms
+  - Database Session & Audit Persistence: ~1.50 ms
+  - **Total P95 Latency: 20.88 ms (<25 ms SLA)**
 - **Observability Endpoints:**
   - `/health`: Hardware inspection (CUDA device, VRAM allocation, model checkpoints).
-  - `/api/metrics`: Live empirical evaluation matrix comparing all 6 system stages.
+  - `/api/metrics`: Live empirical evaluation matrix comparing all system stages.
   - `/api/users/{user_id}/insights`: Real-time breakdown of user genre affinities and recommendation source attributions.

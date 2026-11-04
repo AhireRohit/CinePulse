@@ -1,14 +1,17 @@
-# CinePulse: Production-Grade Personalized Movie Recommendation Platform
+# CinePulse: Personalized Movie Recommendation Platform
 
-[![CI Pipeline](https://github.com/cinepulse/recommender/actions/workflows/ci.yml/badge.svg)](https://github.com/cinepulse/recommender/actions)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue?style=for-the-badge&logo=githubpages)](https://ahirerohit.github.io/CinePulse/)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.6 CUDA](https://img.shields.io/badge/PyTorch-2.6.0%2Bcu124-red.svg)](https://pytorch.org/)
 [![LightGBM](https://img.shields.io/badge/LightGBM-4.7.0-brightgreen.svg)](https://lightgbm.readthedocs.io/)
 [![FAISS](https://img.shields.io/badge/FAISS-CPU%201.15.1-orange.svg)](https://github.com/facebookresearch/faiss)
 [![React 19](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://react.dev/)
+[![Tests: 30 Passed](https://img.shields.io/badge/tests-30%20passed-success.svg)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **CinePulse** is an end-to-end, multi-stage recommendation platform inspired by the industrial recommendation architectures of **Netflix**, **YouTube**, **Meta**, and **Amazon**. Grounded in genuine public benchmark data (**GroupLens MovieLens 1M**), CinePulse implements deep neural candidate retrieval, gradient-boosted listwise ranking, maximal marginal relevance (MMR) re-ranking, and millisecond-level session adaptation without requiring expensive real-time neural retraining.
+> **CinePulse** is an end-to-end, multi-stage recommendation platform inspired by the recommendation architectures of **Netflix**, **YouTube**, **Meta**, and **Amazon**. Grounded in genuine public benchmark data (**GroupLens MovieLens 1M**), CinePulse implements deep neural candidate retrieval, gradient-boosted listwise ranking, maximal marginal relevance (MMR) re-ranking, and millisecond-level session adaptation without requiring expensive real-time neural retraining.
+> 
+> 🌐 **Experience the Live Web App:** [https://ahirerohit.github.io/CinePulse/](https://ahirerohit.github.io/CinePulse/)
 
 ---
 
@@ -19,42 +22,42 @@ CinePulse implements the classic industry four-stage funnel: **Candidate Retriev
 ```mermaid
 flowchart TD
     subgraph Data_Pipeline["1. Offline Data Pipeline"]
-        ML1M["GroupLens MovieLens 1M\n1,000,209 Ratings | 3,883 Movies | 6,040 Users"]
-        Split["Leave-Last-2-Out Temporal Split\nTrain: 987,531 | Val: 6,040 | Test: 6,040\nZero Future-Leakage Guarantee"]
+        ML1M["GroupLens MovieLens 1M\n1,000,209 Raw Ratings | 3,883 Movies | 6,040 Users\n(598 ratings filtered: movies < 5 ratings -> 999,611 valid)"]
+        Split["Leave-Last-2-Out Temporal Split\nTrain: 987,531 | Val: 6,040 | Test: 6,040\nStrict Temporal Splitting"]
         Features["Feature Engineering\nBayesian Smoothed Ratings | Multi-hot Genres | Release Years"]
         ML1M --> Split --> Features
     end
 
     subgraph Retrieval_Stage["2. Multi-Candidate Retrieval (Stage A & B)"]
         User["User Context / Active Session\n(History + Preference Vector)"]
-        TwoTower["PyTorch Two-Tower Network\nUser Tower (Attention-Pooled Sequence + Genres)\nItem Tower (Embeddings + Genres + Features)"]
-        FaissANN["FAISS Exact Inner Product Index (FlatIP)\nSub-2ms Top-100 Candidate Retrieval"]
-        ItemCF["Item-Based Collaborative Filtering\nShrunk Cosine Similarity (k=50)"]
-        Pop["Popularity / Trending Baseline\nBayesian Prior Weighted"]
+        TwoTower["PyTorch Two-Tower Network\nUser Tower (Additive Attention-Pooled Sequence + Genres)\nItem Tower (Embeddings + Genres + Dense Features)"]
+        FaissExact["FAISS Exact Inner Product Index (IndexFlatIP)\nSub-3ms Exact Candidate Retrieval"]
+        ItemCF["Item-Based Collaborative Filtering\nCentered Cosine Similarity (k=100)"]
+        Pop["Popularity / Trending Baseline\nBayesian Prior Weighted (k=30)"]
         
-        User --> TwoTower --> FaissANN
+        User --> TwoTower --> FaissExact
         User --> ItemCF
         User --> Pop
     end
 
     subgraph Ranking_Stage["3. Personalized Ranking (Stage C)"]
-        Candidates["Deduplicated Candidate Pool\nTop-100 Candidates"]
-        RankFeatures["10-Dimensional Feature Extraction\n• Embedding Cosine Sim  • Genre Overlap\n• Bayesian Mean Rating  • Item Activity Count\n• Release Year Delta    • User Activity Level\n• Candidate Source Priority"]
-        LGBM["LightGBM Ranker (LambdaRank / NDCG)\n25,000 Query Groups | Early Stopping"]
+        Candidates["Deduplicated Candidate Pool\nTop Candidates from Multi-Source Retrieval (~170 candidates)"]
+        RankFeatures["17-Dimensional Feature Extraction\n• Embedding Cosine Sim  • CF Neighbor Score\n• Bayesian Mean Rating  • Item Activity Count\n• Release Year          • User Activity Level\n• Genre Overlap/Cosine  • Cross Interaction Terms\n• Retrieval Source Indicators (Two-Tower, Item-CF, Pop)"]
+        LGBM["LightGBM Ranker (LambdaRank / NDCG)\nMulti-Source Training Groups | Exact User Tower Vectors"]
         
-        FaissANN --> Candidates
+        FaissExact --> Candidates
         ItemCF --> Candidates
         Pop --> Candidates
         Candidates --> RankFeatures --> LGBM
     end
 
     subgraph Reranking_Stage["4. Re-Ranking & Calibration (Stage D)"]
-        MMR["Maximal Marginal Relevance (MMR)\nRelevance vs Diversity Tradeoff (λ)\nInverse Log-Frequency Novelty Boost (β)\nExploration Epsilon-Greedy Slotting"]
+        MMR["Vectorized Maximal Marginal Relevance (MMR)\nRelevance vs Diversity Tradeoff (λ=0.85)\nInverse Log-Frequency Novelty Boost (β=0.03)\n0.7ms Vectorized Incremental Execution"]
         LGBM --> MMR
     end
 
     subgraph Serving_Layer["5. Production Serving & Session Loop (Stage E)"]
-        FastAPI["FastAPI Async Engine (<15ms P95)\nAsync SQLite / PostgreSQL Persistence"]
+        FastAPI["FastAPI Async Engine (<21ms P95)\nAsync SQLite Persistence"]
         SessionStore["In-Memory Real-Time Session Store\nInstant Liked/Dismissed Item Suppression\nDynamic Preference Vector Blending"]
         ReactUI["Editorial Streaming UI (React 19 + TypeScript + Tailwind v4)\nHero Spotlight | Interactive Rails | Real-Time Feedback\nExplainability Drawer | Live MMR Diversity Tuning"]
         
@@ -69,21 +72,31 @@ flowchart TD
 
 ## 2. Empirical Benchmark Matrix
 
-All metrics below are measured offline on the held-out temporal test set (500 test users, zero future data leakage). Exact reproducible numbers are stored in `artifacts/metrics/evaluation_results.json`.
+All metrics below are measured offline on the held-out temporal test set (500 untouched test users, zero target leakage). Exact reproducible numbers are stored in `artifacts/metrics/evaluation_results.json`.
 
-| Model Architecture | Recall@20 | Recall@100 | NDCG@10 | MRR@10 | Catalog Coverage@20 | Catalog Coverage@100 | Intra-List Diversity | Novelty (bits) | P95 Latency (ms) |
+| Model Architecture | Recall@20 (95% CI) | Recall@100 | NDCG@10 (95% CI) | Recall@20 (Pos $\ge$ 4.0) | Catalog Coverage@20 | Catalog Coverage@100 | Intra-List Diversity | Novelty (bits) | P95 Latency (ms) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Popularity Baseline** | 3.20% | 10.60% | 0.0118 | 0.0089 | 2.28% | 8.40% | 0.8260 | 10.26 | 0.09 ms |
-| **Item-based CF** | **12.60%** | **33.20%** | **0.0354** | **0.0214** | 32.87% | 78.69% | 0.6454 | 9.93 | 0.19 ms |
-| **Content-based Baseline** | 4.80% | 13.40% | 0.0085 | 0.0053 | 63.88% | 94.41% | 0.0604 | **12.70** | 0.17 ms |
-| **Two-Tower ANN Retrieval** | 8.00% | 26.40% | 0.0178 | 0.0099 | **76.38%** | **99.27%** | 0.3982 | 11.99 | 1.65 ms |
-| **Two-Tower + LightGBM Ranker** | 7.80% | 26.40% | 0.0212 | 0.0128 | 73.98% | **99.27%** | 0.3954 | 11.90 | 8.59 ms |
-| **Full Pipeline (ANN + Ranker + MMR)** | 4.80% | 26.40% | 0.0124 | 0.0066 | 71.19% | **99.27%** | 0.6011 | 12.53 | 93.05 ms |
+| **Popularity Baseline** | 3.60% [0.020, 0.052] | 13.00% | 0.0112 [0.005, 0.018] | 4.47% | 2.61% | 10.07% | 0.8244 | 10.30 | 0.09 ms |
+| **Item-based CF** | 11.60% [0.088, 0.144] | 31.60% | 0.0410 [0.027, 0.057] | 13.41% | 12.94% | 41.86% | 0.7161 | 9.53 | 4.00 ms |
+| **Content-based Baseline** | 2.00% [0.010, 0.034] | 11.40% | 0.0059 [0.002, 0.012] | 1.68% | 38.26% | 83.58% | 0.0641 | 13.03 | 0.29 ms |
+| **Two-Tower (ANN Retrieval)** | 10.60% [0.080, 0.134] | 31.60% | 0.0346 [0.023, 0.048] | 10.61% | **81.88%** | **99.85%** | 0.4581 | 12.39 | 2.96 ms |
+| **Two-Tower + LightGBM Ranker** | **18.80% [0.154, 0.222]** | **44.40%** | **0.0641 [0.048, 0.082]** | **18.44%** | 41.48% | 71.78% | 0.5965 | 10.35 | 15.38 ms |
+| **Full Pipeline (Multi-Source + Ranker + MMR)** | 17.40% [0.142, 0.206] | 44.20% | 0.0601 [0.044, 0.078] | 17.60% | 40.81% | 71.37% | **0.6708** | 10.32 | **20.88 ms** |
 
-### Key Architectural Tradeoffs
-1. **The Retrieval-to-Ranking Precision Lift:** Passing the Two-Tower ANN retrieved candidates (Top-100) through the LightGBM Ranker produces a **+19.1% gain in NDCG@10** (0.0178 → 0.0212) and a **+29.3% gain in MRR@10** (0.0099 → 0.0128) by incorporating non-linear interactions, Bayesian ratings, and release year preferences that a dot-product bilinear tower cannot capture.
-2. **Catalog Coverage & Long-Tail Exposure:** Popularity baselines suffer from acute filter bubbles (only 2.28% of the catalog ever recommended at K=20). The Two-Tower ANN retrieval covers **76.38%** of the catalog at K=20 and **99.27%** at K=100.
-3. **The Diversity-Relevance Tradeoff:** Enabling MMR re-ranking deliberately yields a slight drop in pure Top-10 ranking precision (NDCG@10 0.0212 → 0.0124) in exchange for a massive **+52% boost in Intra-List Diversity** (0.3954 → 0.6011) and higher novelty (12.53 bits), eliminating monotonous single-genre echo chambers.
+### Key Architectural Findings & Tradeoffs
+1. **Candidate Retrieval and Ranking Synergy:**
+   - Neural Two-Tower ANN retrieval retrieves relevant candidates across almost the entire catalog (**99.85% coverage** vs 41.86% for Item-CF).
+   - LightGBM LambdaRank listwise ranking over the multi-source candidate pool dramatically improves precision, raising **Recall@20 from 10.60% to 18.80% (+77.4%)** and **NDCG@10 from 0.0346 to 0.0641 (+85.3%)**.
+2. **Statistical Significance vs. Item-CF (Untouched Test Cohort):**
+   - Paired user-level bootstrap hypothesis testing shows that the Full Pipeline significantly outperforms Item-CF on **Recall@20** ($\Delta = +0.0580$, 95% CI: $[+0.0220, +0.0940]$, paired bootstrap $p < 0.001$, bounded by 1,000 resamples).
+   - For **NDCG@10**, while the Full Pipeline achieves a higher point estimate ($0.0601$ vs $0.0410$, $\Delta = +0.0191$), the difference is **not statistically significant** at the $\alpha = 0.05$ threshold on the untouched test cohort (95% CI: $[-0.0027, +0.0414]$, $p = 0.0890$). On the validation cohort, the gain is significant ($p = 0.0010$).
+3. **Multi-Positive Benchmark Integrity Disclosure:**
+   - The multi-positive 5-interaction holdout protocol was determined during engineering audits to contain 60.0% training data overlap (models trained on leave-last-2-out). Consequently, multi-positive metrics are **excluded from all claims**. All reported metrics above derive strictly from the zero-leakage primary temporal holdout benchmark.
+4. **The Relevance-Diversity Sweet Spot in MMR:**
+   - Pure ranker scoring maximizes NDCG@10 (0.0641) at the expense of list diversity (ILD = 0.5965).
+   - Production MMR ($\lambda=0.85, \beta=0.03$) uses standardized sigmoid normalization (replacing legacy min-max scaling) and trades off 6.2% NDCG@10 (0.0601) to boost Intra-List Diversity to **0.6708 (+12.5%)** and maintain healthy long-tail novelty (10.32 bits).
+5. **End-to-End Latency Verification:**
+   - With vectorized incremental MMR and efficient 17-feature extraction, full pipeline P95 latency is **20.88 ms** (<25 ms SLA).
 
 ---
 
@@ -175,7 +188,7 @@ Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 
 ## 6. Testing & Quality Assurance
 
-CinePulse includes 21 comprehensive automated tests covering data leakage, model architectures, ranking features, MMR mathematical properties, session adaptation, API endpoints, and complete end-to-end user journeys:
+CinePulse includes 30 comprehensive automated tests covering data leakage, model architectures, ranking features, MMR mathematical properties, session adaptation, API endpoints, and complete end-to-end user journeys:
 
 ```powershell
 # Run the complete test suite

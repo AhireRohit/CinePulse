@@ -7,25 +7,25 @@ from torch.utils.data import Dataset
 class MovieLensRetrievalDataset(Dataset):
     """
     High-performance Dataset for training Two-Tower retrieval model.
-    Uses pre-extracted numpy arrays for sub-microsecond indexing.
+    Constructs strictly causal prefix interaction sequences:
+    - Target is strictly chronologically subsequent to prefix history.
+    - Zero target leakage (target item is NEVER in prefix history).
+    - Zero future leakage (history contains only prior timestamps).
+    - Positive-only thresholding (r >= 4.0).
     """
 
     def __init__(
         self,
         ratings_df: pd.DataFrame,
         movies_df: pd.DataFrame,
-        user_histories: dict[str | int, list[int]],
+        user_histories: dict[str | int, list[int]] | None = None,
         max_seq_len: int = 20,
         genre_cols: list[str] | None = None,
+        causal: bool = True,
+        min_rating: float = 4.0,
     ):
         self.max_seq_len = max_seq_len
         self.num_movies = len(movies_df)
-
-        # Fast flat numpy arrays for ratings
-        self.user_indices = ratings_df["user_idx"].to_numpy(dtype=np.int64)
-        self.target_indices = ratings_df["movie_idx"].to_numpy(dtype=np.int64)
-        self.rating_vals = ratings_df["rating"].to_numpy(dtype=np.float32)
-        self.length = len(self.user_indices)
 
         if genre_cols is None:
             genre_cols = [c for c in movies_df.columns if c.startswith("genre_")]
@@ -54,47 +54,115 @@ class MovieLensRetrievalDataset(Dataset):
             dtype=torch.float32,
         )
 
-        # Precompute user history sequences as padded numpy arrays [num_users, max_seq_len]
-        max_uid = int(self.user_indices.max()) + 1
-        num_genres = len(self.genre_cols)
+        movie_genres_np = movies_df[self.genre_cols].values.astype(np.float32)
 
-        self.padded_user_histories = np.zeros((max_uid, max_seq_len), dtype=np.int64)
-        self.user_history_lens = np.zeros(max_uid, dtype=np.int64)
-        self.user_genre_prefs = np.zeros((max_uid, num_genres), dtype=np.float32)
+        if causal:
+            # Construct causal prefix sequences from sorted positive interactions
+            pos_df = ratings_df[ratings_df["rating"] >= min_rating].sort_values(
+                ["user_idx", "timestamp"]
+            ).reset_index(drop=True)
 
-        genre_np = movies_df[self.genre_cols].values.astype(np.float32)
+            u_list = []
+            tgt_list = []
+            hist_list = []
+            hlen_list = []
+            gpref_list = []
+            r_list = []
 
-        for uid_raw, hist in user_histories.items():
-            uid = int(uid_raw)
-            if uid < max_uid:
-                hist_arr = np.array(hist, dtype=np.int64)
-                hist_len = min(len(hist_arr), max_seq_len)
-                self.user_history_lens[uid] = hist_len
-                if hist_len > 0:
-                    self.padded_user_histories[uid, -hist_len:] = hist_arr[-hist_len:]
-                    valid_items = hist_arr[hist_arr < self.num_movies]
-                    if len(valid_items) > 0:
-                        self.user_genre_prefs[uid] = genre_np[valid_items].mean(axis=0)
+            for u, group in pos_df.groupby("user_idx"):
+                m_arr = group["movie_idx"].values
+                r_arr = group["rating"].values
+                n_items = len(m_arr)
+                if n_items < 2:
+                    continue
 
-        self.padded_user_histories_tensor = torch.tensor(self.padded_user_histories, dtype=torch.long)
-        self.user_history_lens_tensor = torch.tensor(self.user_history_lens, dtype=torch.long)
-        self.user_genre_prefs_tensor = torch.tensor(self.user_genre_prefs, dtype=torch.float32)
+                for k in range(1, n_items):
+                    target = m_arr[k]
+                    prefix = m_arr[max(0, k - max_seq_len):k]
+                    h_len = len(prefix)
+
+                    padded = np.full(max_seq_len, self.num_movies, dtype=np.int64)
+                    padded[-h_len:] = prefix
+
+                    valid_p = prefix[prefix < self.num_movies]
+                    g_pref = (
+                        movie_genres_np[valid_p].mean(axis=0)
+                        if len(valid_p) > 0
+                        else np.zeros(len(self.genre_cols), dtype=np.float32)
+                    )
+
+                    u_list.append(u)
+                    tgt_list.append(target)
+                    hist_list.append(padded)
+                    hlen_list.append(h_len)
+                    gpref_list.append(g_pref)
+                    r_list.append(r_arr[k])
+
+            self.user_indices = np.array(u_list, dtype=np.int64)
+            self.target_indices = np.array(tgt_list, dtype=np.int64)
+            self.history_seqs = np.array(hist_list, dtype=np.int64)
+            self.history_lens = np.array(hlen_list, dtype=np.int64)
+            self.genre_prefs = np.array(gpref_list, dtype=np.float32)
+            self.rating_vals = np.array(r_list, dtype=np.float32)
+            self.length = len(self.user_indices)
+
+        else:
+            # Non-causal evaluation mode (validation set where history comes from train)
+            pos_df = ratings_df[ratings_df["rating"] >= min_rating].reset_index(drop=True)
+            u_list = []
+            tgt_list = []
+            hist_list = []
+            hlen_list = []
+            gpref_list = []
+            r_list = []
+
+            for _, row in pos_df.iterrows():
+                u = int(row["user_idx"])
+                target = int(row["movie_idx"])
+                r = float(row["rating"])
+
+                hist = user_histories.get(u, []) if user_histories else []
+                # Clean history strictly of target if somehow present
+                hist_clean = [m for m in hist if m != target]
+                h_len = min(len(hist_clean), max_seq_len)
+
+                padded = np.full(max_seq_len, self.num_movies, dtype=np.int64)
+                if h_len > 0:
+                    padded[-h_len:] = hist_clean[-h_len:]
+
+                valid_p = [m for m in hist_clean if m < self.num_movies]
+                g_pref = (
+                    movie_genres_np[valid_p].mean(axis=0)
+                    if valid_p
+                    else np.zeros(len(self.genre_cols), dtype=np.float32)
+                )
+
+                u_list.append(u)
+                tgt_list.append(target)
+                hist_list.append(padded)
+                hlen_list.append(h_len)
+                gpref_list.append(g_pref)
+                r_list.append(r)
+
+            self.user_indices = np.array(u_list, dtype=np.int64)
+            self.target_indices = np.array(tgt_list, dtype=np.int64)
+            self.history_seqs = np.array(hist_list, dtype=np.int64)
+            self.history_lens = np.array(hlen_list, dtype=np.int64)
+            self.genre_prefs = np.array(gpref_list, dtype=np.float32)
+            self.rating_vals = np.array(r_list, dtype=np.float32)
+            self.length = len(self.user_indices)
 
     def __len__(self) -> int:
         return self.length
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
-        user_idx = int(self.user_indices[idx])
-        target_movie_idx = int(self.target_indices[idx])
-        rating = float(self.rating_vals[idx])
-
         return {
-            "user_idx": torch.tensor(user_idx, dtype=torch.long),
-            "target_movie_idx": torch.tensor(target_movie_idx, dtype=torch.long),
-            "history_seq": self.padded_user_histories_tensor[user_idx],
-            "history_len": self.user_history_lens_tensor[user_idx],
-            "user_genre_pref": self.user_genre_prefs_tensor[user_idx],
-            "target_movie_genres": self.movie_genres[target_movie_idx],
-            "target_movie_dense": self.movie_dense_features[target_movie_idx],
-            "rating": torch.tensor(rating, dtype=torch.float32),
+            "user_idx": torch.tensor(self.user_indices[idx], dtype=torch.long),
+            "target_movie_idx": torch.tensor(self.target_indices[idx], dtype=torch.long),
+            "history_seq": torch.tensor(self.history_seqs[idx], dtype=torch.long),
+            "history_len": torch.tensor(self.history_lens[idx], dtype=torch.long),
+            "user_genre_pref": torch.tensor(self.genre_prefs[idx], dtype=torch.float32),
+            "target_movie_genres": self.movie_genres[self.target_indices[idx]],
+            "target_movie_dense": self.movie_dense_features[self.target_indices[idx]],
+            "rating": torch.tensor(self.rating_vals[idx], dtype=torch.float32),
         }

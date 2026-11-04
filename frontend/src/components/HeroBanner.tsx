@@ -20,12 +20,40 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [userRating, setUserRating] = useState<number | null>(null);
+  const [posterLoaded, setPosterLoaded] = useState(false);
+  const [posterError, setPosterError] = useState(false);
 
+  // Tasteful alternative showcase when no candidate satisfies the spotlight gate
   if (!movie) {
-    return null;
+    return (
+      <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-r from-surface-elevated via-surface to-background border border-border p-6 sm:p-10 md:p-12 mb-10 shadow-2xl">
+        <div className="absolute top-0 right-0 -mr-24 -mt-24 w-[420px] h-[420px] rounded-full bg-accent/10 blur-[100px] pointer-events-none" />
+        <div className="relative z-10 max-w-2xl">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-accent/15 border border-accent/30 text-xs font-semibold text-accent uppercase tracking-wider mb-4">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Curated Recommendation Engine</span>
+          </div>
+          <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-white tracking-tight leading-tight mb-4">
+            Personalized Cinema, Ranked in Real-Time
+          </h1>
+          <p className="text-sm text-gray-300 leading-relaxed mb-6">
+            Browse multi-stage neural recommendations below, powered by PyTorch Two-Tower embeddings, FAISS exact retrieval, LightGBM listwise ranking, and MMR diversification. React to films below to tune your active profile.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="px-3 py-1.5 rounded-lg bg-surface-elevated border border-border text-xs font-mono text-muted">
+              • 6,040 Evaluated Users
+            </span>
+            <span className="px-3 py-1.5 rounded-lg bg-surface-elevated border border-border text-xs font-mono text-muted">
+              • 3,416 Catalog Titles
+            </span>
+            <span className="px-3 py-1.5 rounded-lg bg-surface-elevated border border-border text-xs font-mono text-muted">
+              • Sub-25ms P95 Latency
+            </span>
+          </div>
+        </div>
+      </div>
+    );
   }
-
-  const matchPercentage = Math.round(movie.relevance_score * 100);
 
   const handleLike = () => {
     const next = !liked;
@@ -46,6 +74,24 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 
   return (
     <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-r from-surface-elevated via-surface to-background border border-border p-6 sm:p-10 md:p-12 mb-10 shadow-2xl group">
+      {/* Real Movie Poster / Backdrop Imagery (when available) */}
+      {movie.poster_url && !posterError && (
+        <div className="absolute right-0 top-0 bottom-0 w-full sm:w-2/3 md:w-1/2 overflow-hidden pointer-events-none z-0">
+          <img
+            src={movie.poster_url}
+            alt={movie.title}
+            onLoad={() => setPosterLoaded(true)}
+            onError={() => setPosterError(true)}
+            className={`w-full h-full object-cover object-center transition-all duration-700 ${
+              posterLoaded ? 'opacity-35 md:opacity-45 scale-100' : 'opacity-0 scale-105'
+            }`}
+          />
+          {/* Subtle multi-directional gradients blending the poster smoothly into UI */}
+          <div className="absolute inset-0 bg-gradient-to-r from-surface-elevated via-surface-elevated/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface-elevated via-transparent to-surface-elevated/40" />
+        </div>
+      )}
+
       {/* Background ambient lighting effects */}
       <div className="absolute top-0 right-0 -mr-24 -mt-24 w-[420px] h-[420px] rounded-full bg-amber-500/10 blur-[100px] pointer-events-none" />
       <div className="absolute bottom-0 left-1/3 -mb-20 w-80 h-80 rounded-full bg-indigo-500/10 blur-[80px] pointer-events-none" />
@@ -53,7 +99,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
       {/* Decorative film frame accent */}
       <div className="absolute top-4 right-6 hidden md:flex items-center space-x-2 text-xs font-mono text-muted/60">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-        <span>NEURAL RETRIEVAL RANK #1</span>
+        <span>TOP SPOTLIGHT RECOMMENDATION</span>
       </div>
 
       <div className="relative z-10 max-w-3xl">
@@ -80,7 +126,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/60 border border-white/10 text-white font-semibold shadow-sm">
             <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
             <span>{movie.rating_mean.toFixed(1)}</span>
-            <span className="text-[10px] text-muted font-normal">/ 5.0</span>
+            <span className="text-[10px] text-muted font-normal">/ 5.0 ({movie.rating_count ? movie.rating_count.toLocaleString() : '2,200+'} reviews)</span>
           </div>
 
           <span className="font-mono text-gray-300 font-medium">{movie.release_year}</span>
@@ -98,8 +144,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           </div>
 
           <span className="w-1 h-1 rounded-full bg-muted" />
-          <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold font-mono text-xs flex items-center space-x-1">
-            <span>{matchPercentage}% Match</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold font-mono text-xs flex items-center space-x-1.5 shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{movie.affinity_label || 'Top Affinity Match'}</span>
           </span>
         </div>
 
