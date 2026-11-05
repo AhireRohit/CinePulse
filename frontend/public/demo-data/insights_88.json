@@ -1,0 +1,21 @@
+{
+  "model_version": "v2",
+  "user_idx": 88,
+  "total_interactions": 19,
+  "active_likes_count": 0,
+  "active_saves_count": 0,
+  "dismissed_count": 0,
+  "retrieval_sources_breakdown": {
+    "two_tower": 200,
+    "item_cf": 99,
+    "popularity": 30
+  },
+  "timing_breakdown_ms": {
+    "two_tower_ms": 252.65209999633953,
+    "item_cf_ms": 2.2170000011101365,
+    "popularity_ms": 0.07010000990703702,
+    "ranking_ms": 20.3068999981042,
+    "reranking_ms": 1.1941999837290496,
+    "total_ms": 283.65060000214726
+  }
+}

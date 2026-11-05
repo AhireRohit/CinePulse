@@ -1,0 +1,46 @@
+{
+  "artifacts/models/two_tower_best.pt": {
+    "size_bytes": 3574162,
+    "sha256": "6a348190a9bd519506e7342dc7ca06276c276a8fe0745304206e058d682b9e03"
+  },
+  "artifacts/models/ranker_lgbm.txt": {
+    "size_bytes": 64176,
+    "sha256": "fed0cda2c9112809714798db5c5bb5ba4c35749686312ac690e547756a419b1f"
+  },
+  "artifacts/models/item_embeddings.npy": {
+    "size_bytes": 874624,
+    "sha256": "a0aa1de49b59d95a612aac2670a080b04b04c205909a02fee1c83769d715f882"
+  },
+  "artifacts/indices/item_index.faiss": {
+    "size_bytes": 874541,
+    "sha256": "4ac469aa9611c2b6c183d6b2b3f0efbe06644d1852d606f27e1be5afc7d34d34"
+  },
+  "artifacts/indices/faiss_movie_ids.npy": {
+    "size_bytes": 27456,
+    "sha256": "e6e5233b41930dba179a714477d2fc7a6e81e98d2035fc64582683e7ae52ddbe"
+  },
+  "data/processed/mappings.json": {
+    "size_bytes": 256587,
+    "sha256": "39f2e2fddf40d570440c401b3d691faa1e732fac5cbf3b631d2e4218e7b97575"
+  },
+  "data/processed/movies.parquet": {
+    "size_bytes": 285281,
+    "sha256": "a7394482dfa92756427d14bf3876f7e65b2d7d37edba67ebde750a9f9cad7e5a"
+  },
+  "data/processed/ratings_train.parquet": {
+    "size_bytes": 6390414,
+    "sha256": "d7130063d915f04cd3550215d9c1cbc1e276e880b99c9227d807461e914024aa"
+  },
+  "data/processed/ratings_val.parquet": {
+    "size_bytes": 147936,
+    "sha256": "a05798632c042495689d6cdb300adfe2fe810a9284f7ea3c91f3a5cdd8b1f66a"
+  },
+  "data/processed/ratings_test.parquet": {
+    "size_bytes": 147407,
+    "sha256": "82ed6f5857074b7e6a0a48dd56558bb6dcb71ee400cb39ef95d7a64478961943"
+  },
+  "data/processed/user_train_histories.json": {
+    "size_bytes": 5643755,
+    "sha256": "dcf4502cb532aa9236e79b636c9d10b4b241ba7088684f4fbdf7d8ebedfac375"
+  }
+}

@@ -33,11 +33,13 @@ class RecommendationEngine:
         genre_cols: list[str],
         user_histories: dict[int, list[int]],
         device: torch.device | None = None,
+        user_train_ratings: dict[int, dict[int, float]] | None = None,
     ):
         self.movies_df = movies_df
         self.mappings = mappings
         self.genre_cols = genre_cols
         self.user_histories = user_histories
+        self.user_train_ratings = user_train_ratings or {}
         self.num_users = mappings["num_users"]
         self.num_movies = mappings["num_movies"]
 
@@ -63,11 +65,31 @@ class RecommendationEngine:
             genre_cols=self.genre_cols,
             global_mean_rating=mappings.get("global_rating_mean", 3.5),
         )
+
+        # Model serving mode configuration (v1 = original production, v2 = Config 8)
+        self.model_version = settings.model_version
+        if self.model_version == "v2":
+            logger.info("RecommendationEngine operating in v2 mode (Tournament Winner Config 8).")
+            self.retrieval_two_tower_k = settings.retrieval_two_tower_k_v2
+            self.default_lambda = settings.default_mmr_lambda_v2
+            self.default_novelty_weight = settings.novelty_weight_v2
+            self.item_cf.top_k_neighbors = 200
+            self.item_cf.shrinkage = 25.0
+            self.feature_extractor.use_expanded = True
+        else:
+            logger.info("RecommendationEngine operating in v1 mode (Original Production Baseline).")
+            self.retrieval_two_tower_k = settings.retrieval_candidates_k
+            self.default_lambda = settings.default_mmr_lambda
+            self.default_novelty_weight = settings.novelty_weight
+            self.item_cf.top_k_neighbors = 50
+            self.item_cf.shrinkage = 25.0
+            self.feature_extractor.use_expanded = False
+
         self.reranker = MMRReRanker(
             movies_df=self.movies_df,
             genre_cols=self.genre_cols,
-            default_lambda=settings.default_mmr_lambda,
-            default_novelty_weight=settings.novelty_weight,
+            default_lambda=self.default_lambda,
+            default_novelty_weight=self.default_novelty_weight,
         )
 
         # Precomputed movie item vectors
@@ -89,13 +111,14 @@ class RecommendationEngine:
         if user_idx not in self.user_sessions:
             # Initialize from historical train data
             hist = list(self.user_histories.get(user_idx, []))
+            hist_ratings = dict(self.user_train_ratings.get(user_idx, {})) if self.user_train_ratings else {}
             self.user_sessions[user_idx] = {
                 "history": hist,
                 "likes": set(),
                 "dislikes": set(),
                 "saves": set(),
                 "dismissals": set(),
-                "ratings": {},
+                "ratings": hist_ratings,
                 "preferred_genres": [],
             }
         return self.user_sessions[user_idx]
@@ -211,9 +234,14 @@ class RecommendationEngine:
         # 1.1 Two-Tower ANN Retrieval
         t0 = time.perf_counter()
         user_vector = self.generate_user_vector(user_idx, history)
+        eff_retrieval_k = (
+            self.retrieval_two_tower_k
+            if (retrieval_k == 100 or retrieval_k == settings.retrieval_candidates_k)
+            else retrieval_k
+        )
         two_tower_candidates = self.faiss_index.search(
             query_embedding=user_vector,
-            top_k=retrieval_k,
+            top_k=eff_retrieval_k,
             exclude_item_indices=excluded_items,
         )
         for rank_pos, (item_idx, score) in enumerate(two_tower_candidates):
@@ -307,6 +335,8 @@ class RecommendationEngine:
             cf_scores=cf_scores,
             retrieval_sources=sources,
             user_genre_profile=user_genre_profile,
+            user_ratings=session.get("ratings", {}),
+            use_expanded=self.feature_extractor.use_expanded,
         )
 
         if self.ranker.is_fitted and not features_df.empty:
@@ -323,11 +353,13 @@ class RecommendationEngine:
 
         # Step 3: MMR Diversity Re-ranking
         t0 = time.perf_counter()
+        eff_lambda = self.default_lambda if lambda_param is None else lambda_param
+        eff_novelty = self.default_novelty_weight if novelty_weight is None else novelty_weight
         reranked_results = self.reranker.rerank(
             candidate_scores=ranked_pairs,
             top_k=top_k,
-            lambda_param=lambda_param,
-            novelty_weight=novelty_weight,
+            lambda_param=eff_lambda,
+            novelty_weight=eff_novelty,
             excluded_item_indices=excluded_items,
         )
         reranking_time_ms = (time.perf_counter() - t0) * 1000.0

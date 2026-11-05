@@ -97,7 +97,11 @@ export const EvaluationPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {Object.entries(data.models).map(([modelName, metrics]) => {
-                  const isTop = modelName.includes('LightGBM') || modelName.includes('Full Pipeline');
+                  const isTop =
+                    modelName.includes('V2 Production') ||
+                    modelName.includes('WINNER') ||
+                    modelName.includes('LightGBM') ||
+                    modelName.includes('Full Pipeline');
                   return (
                     <tr
                       key={modelName}

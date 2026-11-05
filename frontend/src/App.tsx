@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { UserProfile, RecommendationFeed } from './types';
-import { getUsers, getRecommendations, postFeedback } from './api/client';
+import { getUsers, getRecommendations, postFeedback, isStaticHost } from './api/client';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './pages/HomePage';
 import { ExplorePage } from './pages/ExplorePage';
@@ -62,16 +62,25 @@ export const App: React.FC = () => {
       await postFeedback(currentUser.user_idx, movieId, action, rating);
       setSessionEventCount((prev) => prev + 1);
 
-      const msg =
-        action === 'like'
-          ? 'Liked! Real-time recommendations boosted for similar titles.'
+      const msg = isStaticHost
+        ? action === 'like'
+          ? 'Liked! Saved to your session favorites.'
           : action === 'dislike'
-          ? 'Disliked! Item suppressed instantly from candidate pools.'
+          ? 'Disliked! Item hidden from recommendations.'
           : action === 'save'
           ? 'Saved to your personal Watchlist.'
           : action === 'rate'
-          ? `Rated ${rating}★! Session vector dynamically recalibrated.`
-          : 'Dismissed! Hidden from future candidate retrieval.';
+          ? `Rated ${rating}★! Stored in active session.`
+          : 'Dismissed! Hidden from view.'
+        : action === 'like'
+        ? 'Liked! Real-time recommendations boosted for similar titles.'
+        : action === 'dislike'
+        ? 'Disliked! Item suppressed instantly from candidate pools.'
+        : action === 'save'
+        ? 'Saved to your personal Watchlist.'
+        : action === 'rate'
+        ? `Rated ${rating}★! Session vector dynamically recalibrated.`
+        : 'Dismissed! Hidden from future candidate retrieval.';
 
       setFeedbackNotification(msg);
       setTimeout(() => setFeedbackNotification(null), 3500);

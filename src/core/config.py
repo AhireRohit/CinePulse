@@ -29,6 +29,15 @@ class Settings(BaseSettings):
     default_mmr_lambda: float = 0.85
     novelty_weight: float = 0.03
 
+    # Model Version & Feature Flags
+    # "v1" = original production (17 features, TT=100/CF=100/Pop=30, MMR lambda=0.85, beta=0.03)
+    # "v2" = tournament winner Config 8 (24 features, TT=200/CF=100/Pop=30, ranker_lgbm_exp3, MMR lambda=0.95, beta=0.01)
+    model_version: str = "v2"
+    retrieval_two_tower_k_v2: int = 200
+    default_mmr_lambda_v2: float = 0.95
+    novelty_weight_v2: float = 0.01
+    v2_ranker_path: Path = base_dir / "artifacts" / "models" / "ranker_lgbm_v2.txt"
+
     # TMDB API (Optional: enrich poster / backdrop / synopsis)
     tmdb_api_key: str | None = None
     tmdb_image_base_url: str = "https://image.tmdb.org/t/p/w500"

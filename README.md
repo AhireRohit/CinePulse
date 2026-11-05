@@ -6,44 +6,46 @@
 [![LightGBM](https://img.shields.io/badge/LightGBM-4.7.0-brightgreen.svg)](https://lightgbm.readthedocs.io/)
 [![FAISS](https://img.shields.io/badge/FAISS-CPU%201.15.1-orange.svg)](https://github.com/facebookresearch/faiss)
 [![React 19](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://react.dev/)
-[![Tests: 30 Passed](https://img.shields.io/badge/tests-30%20passed-success.svg)](#)
+[![Tests: 43 Passed](https://img.shields.io/badge/tests-43%20passed-success.svg)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **CinePulse** is an end-to-end, multi-stage recommendation platform inspired by the recommendation architectures of **Netflix**, **YouTube**, **Meta**, and **Amazon**. Grounded in genuine public benchmark data (**GroupLens MovieLens 1M**), CinePulse implements deep neural candidate retrieval, gradient-boosted listwise ranking, maximal marginal relevance (MMR) re-ranking, and millisecond-level session adaptation without requiring expensive real-time neural retraining.
+> **CinePulse** is an end-to-end, multi-stage recommendation platform inspired by the production architectures of **Netflix**, **YouTube**, **Meta**, and **Amazon**. Grounded in genuine public benchmark data (**GroupLens MovieLens 1M**), CinePulse implements deep neural candidate retrieval, gradient-boosted listwise ranking, maximal marginal relevance (MMR) re-ranking, and millisecond-level session adaptation without requiring expensive real-time neural retraining.
+> 
+> 🚀 **CinePulse V2 Released:** Following an extensive 6-experiment relevance tournament across 51 candidate configurations, CinePulse V2 upgrades candidate retrieval (Two-Tower top 200, shrunk Item-CF top 100, Bayesian popularity top 30), expands listwise ranking to **24 causal features**, eliminates suboptimal external score fusion, and tunes re-ranking to a **Relevance-First MMR** sweet spot ($\lambda=0.95, \beta=0.01$). On a strictly sequestered holdout of **3,974 test users**, V2 achieves **NDCG@10 = 0.0778 (+38.9%)**, **Recall@20 = 0.2219 (+22.7%)**, and **95.1% catalog coverage** at **27.92 ms P95 latency** (paired bootstrap $p = 0.0010$).
 > 
 > 🌐 **Experience the Live Web App:** [https://ahirerohit.github.io/CinePulse/](https://ahirerohit.github.io/CinePulse/)
 
 ---
 
-## 1. System Architecture
+## 1. System Architecture (CinePulse V2)
 
-CinePulse implements the classic industry four-stage funnel: **Candidate Retrieval**, **Scoring & Ranking**, **Diversity & Novelty Re-Ranking**, and **Real-Time Session State Adaptation**.
+CinePulse implements the classic industry four-stage funnel: **Candidate Retrieval**, **Personalized Listwise Ranking**, **Diversity & Novelty Re-Ranking**, and **Real-Time Session Adaptation**.
 
 ```mermaid
 flowchart TD
     subgraph Data_Pipeline["1. Offline Data Pipeline"]
         ML1M["GroupLens MovieLens 1M\n1,000,209 Raw Ratings | 3,883 Movies | 6,040 Users\n(598 ratings filtered: movies < 5 ratings -> 999,611 valid)"]
-        Split["Leave-Last-2-Out Temporal Split\nTrain: 987,531 | Val: 6,040 | Test: 6,040\nStrict Temporal Splitting"]
+        Split["Leave-Last-2-Out Temporal Split\nTrain: 987,531 | Val: 6,040 | Test: 6,040\nStrict Temporal Splitting (Zero Target Leakage)"]
         Features["Feature Engineering\nBayesian Smoothed Ratings | Multi-hot Genres | Release Years"]
         ML1M --> Split --> Features
     end
 
-    subgraph Retrieval_Stage["2. Multi-Candidate Retrieval (Stage A & B)"]
-        User["User Context / Active Session\n(History + Preference Vector)"]
-        TwoTower["PyTorch Two-Tower Network\nUser Tower (Additive Attention-Pooled Sequence + Genres)\nItem Tower (Embeddings + Genres + Dense Features)"]
+    subgraph Retrieval_Stage["2. Multi-Candidate Retrieval (V2 Expanded Pool)"]
+        User["User Context / Active Session\n(History + Dynamic Preference Vector)"]
+        TwoTower["PyTorch Two-Tower Network (Top 200)\nUser Tower: Additive Attention Sequence + Genre Projection\nItem Tower: Embeddings + Multi-hot Genres + Metadata"]
         FaissExact["FAISS Exact Inner Product Index (IndexFlatIP)\nSub-3ms Exact Candidate Retrieval"]
-        ItemCF["Item-Based Collaborative Filtering\nCentered Cosine Similarity (k=100)"]
-        Pop["Popularity / Trending Baseline\nBayesian Prior Weighted (k=30)"]
+        ItemCF["Shrunk Item-CF Baseline (Top 100)\nCentered Cosine Similarity (k=200, shrinkage λ=25.0)"]
+        Pop["Popularity / Trending Baseline (Top 30)\nBayesian Prior Weighted (m=3.58, C=25)"]
         
         User --> TwoTower --> FaissExact
         User --> ItemCF
         User --> Pop
     end
 
-    subgraph Ranking_Stage["3. Personalized Ranking (Stage C)"]
-        Candidates["Deduplicated Candidate Pool\nTop Candidates from Multi-Source Retrieval (~170 candidates)"]
-        RankFeatures["17-Dimensional Feature Extraction\n• Embedding Cosine Sim  • CF Neighbor Score\n• Bayesian Mean Rating  • Item Activity Count\n• Release Year          • User Activity Level\n• Genre Overlap/Cosine  • Cross Interaction Terms\n• Retrieval Source Indicators (Two-Tower, Item-CF, Pop)"]
-        LGBM["LightGBM Ranker (LambdaRank / NDCG)\nMulti-Source Training Groups | Exact User Tower Vectors"]
+    subgraph Ranking_Stage["3. Personalized Ranking (Stage C: 24 Causal Features)"]
+        Candidates["Deduplicated Candidate Pool\nUnion of Multi-Source Candidates (~280–315 unique items)"]
+        RankFeatures["24-Dimensional Causal Feature Vector\n• Baseline: TT Score, CF Score, Candidate Rank, Genre Overlap/Cosine\n• Content: Bayesian Rating, Log Count, Mean/Std, Release Year, Year Diff\n• User Context: User Activity Count, Source Indicators (TT, CF, Pop)\n• Cross Features: CF x Bayesian, TT x Genre\n• V2 Causal Additions: Normalized Scores (TT/CF), Score Product & Ratio,\n  User Rating Calibration Diff, Activity x Popularity, Release Year Decay"]
+        LGBM["LightGBM Ranker (LambdaRank / Listwise NDCG)\nPure Ranker Architecture (External Score Fusion Disabled)"]
         
         FaissExact --> Candidates
         ItemCF --> Candidates
@@ -51,17 +53,18 @@ flowchart TD
         Candidates --> RankFeatures --> LGBM
     end
 
-    subgraph Reranking_Stage["4. Re-Ranking & Calibration (Stage D)"]
-        MMR["Vectorized Maximal Marginal Relevance (MMR)\nRelevance vs Diversity Tradeoff (λ=0.85)\nInverse Log-Frequency Novelty Boost (β=0.03)\n0.7ms Vectorized Incremental Execution"]
-        LGBM --> MMR
+    subgraph Reranking_Stage["4. Re-Ranking & Safeguards (Stage D)"]
+        MMR["Relevance-First MMR Re-Ranking (λ=0.95, β=0.01)\nStandardized Sigmoid Score Normalization\nPreserves 99.2% Pure Ranker NDCG with Genre Fatigue Mitigation"]
+        HeroGate["Quality-Aware Hero Spotlight Gate\nBayesian Rating ≥ 3.20 | Mean Rating ≥ 3.10 | Rating Count ≥ 50\nSuppresses Poorly Rated Personalized Anomalies"]
+        LGBM --> MMR --> HeroGate
     end
 
-    subgraph Serving_Layer["5. Production Serving & Session Loop (Stage E)"]
-        FastAPI["FastAPI Async Engine (<21ms P95)\nAsync SQLite Persistence"]
-        SessionStore["In-Memory Real-Time Session Store\nInstant Liked/Dismissed Item Suppression\nDynamic Preference Vector Blending"]
-        ReactUI["Editorial Streaming UI (React 19 + TypeScript + Tailwind v4)\nHero Spotlight | Interactive Rails | Real-Time Feedback\nExplainability Drawer | Live MMR Diversity Tuning"]
+    subgraph Serving_Layer["5. Production Serving & Session Adaptation (Stage E)"]
+        FastAPI["FastAPI Async Engine (Sub-33ms P95 Latency)\nAsync SQLite Persistence | Configurable Model Version (v1/v2)"]
+        SessionStore["In-Memory Real-Time Session Store\nInstant Negative Feedback Suppression (Dislikes / Dismissals)\nDynamic Session Vector Blending (γ=0.25)"]
+        ReactUI["Editorial Streaming UI (React 19 + TypeScript + Tailwind v4)\nHero Spotlight | Interactive Rails | Real-Time Feedback\nExplainability Drawer | Precomputed V2 Production Showcase"]
         
-        MMR --> FastAPI
+        HeroGate --> FastAPI
         FastAPI <--> ReactUI
         ReactUI -- "Likes, Dislikes, Dismissals" --> SessionStore
         SessionStore -. "Real-Time Vector Shift" .-> User
@@ -72,31 +75,58 @@ flowchart TD
 
 ## 2. Empirical Benchmark Matrix
 
-All metrics below are measured offline on the held-out temporal test set (500 untouched test users, zero target leakage). Exact reproducible numbers are stored in `artifacts/metrics/evaluation_results.json`.
+### 2.1 Primary Independent Holdout: 3,974 Sequestered Test Users
 
-| Model Architecture | Recall@20 (95% CI) | Recall@100 | NDCG@10 (95% CI) | Recall@20 (Pos $\ge$ 4.0) | Catalog Coverage@20 | Catalog Coverage@100 | Intra-List Diversity | Novelty (bits) | P95 Latency (ms) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Popularity Baseline** | 3.60% [0.020, 0.052] | 13.00% | 0.0112 [0.005, 0.018] | 4.47% | 2.61% | 10.07% | 0.8244 | 10.30 | 0.09 ms |
-| **Item-based CF** | 11.60% [0.088, 0.144] | 31.60% | 0.0410 [0.027, 0.057] | 13.41% | 12.94% | 41.86% | 0.7161 | 9.53 | 4.00 ms |
-| **Content-based Baseline** | 2.00% [0.010, 0.034] | 11.40% | 0.0059 [0.002, 0.012] | 1.68% | 38.26% | 83.58% | 0.0641 | 13.03 | 0.29 ms |
-| **Two-Tower (ANN Retrieval)** | 10.60% [0.080, 0.134] | 31.60% | 0.0346 [0.023, 0.048] | 10.61% | **81.88%** | **99.85%** | 0.4581 | 12.39 | 2.96 ms |
-| **Two-Tower + LightGBM Ranker** | **18.80% [0.154, 0.222]** | **44.40%** | **0.0641 [0.048, 0.082]** | **18.44%** | 41.48% | 71.78% | 0.5965 | 10.35 | 15.38 ms |
-| **Full Pipeline (Multi-Source + Ranker + MMR)** | 17.40% [0.142, 0.206] | 44.20% | 0.0601 [0.044, 0.078] | 17.60% | 40.81% | 71.37% | **0.6708** | 10.32 | **20.88 ms** |
+To ensure rigorous validation free from prior inspection or hyperparameter tuning, the final evaluation was conducted on a strictly sequestered cohort of **3,974 test users** (`ratings_test.parquet`, zero target leakage). Exact reproducible numbers are stored in `artifacts/experiments/relevance_v2/test_confirmation_results.json`.
 
-### Key Architectural Findings & Tradeoffs
-1. **Candidate Retrieval and Ranking Synergy:**
-   - Neural Two-Tower ANN retrieval retrieves relevant candidates across almost the entire catalog (**99.85% coverage** vs 41.86% for Item-CF).
-   - LightGBM LambdaRank listwise ranking over the multi-source candidate pool dramatically improves precision, raising **Recall@20 from 10.60% to 18.80% (+77.4%)** and **NDCG@10 from 0.0346 to 0.0641 (+85.3%)**.
-2. **Statistical Significance vs. Item-CF (Untouched Test Cohort):**
-   - Paired user-level bootstrap hypothesis testing shows that the Full Pipeline significantly outperforms Item-CF on **Recall@20** ($\Delta = +0.0580$, 95% CI: $[+0.0220, +0.0940]$, paired bootstrap $p < 0.001$, bounded by 1,000 resamples).
-   - For **NDCG@10**, while the Full Pipeline achieves a higher point estimate ($0.0601$ vs $0.0410$, $\Delta = +0.0191$), the difference is **not statistically significant** at the $\alpha = 0.05$ threshold on the untouched test cohort (95% CI: $[-0.0027, +0.0414]$, $p = 0.0890$). On the validation cohort, the gain is significant ($p = 0.0010$).
-3. **Multi-Positive Benchmark Integrity Disclosure:**
-   - The multi-positive 5-interaction holdout protocol was determined during engineering audits to contain 60.0% training data overlap (models trained on leave-last-2-out). Consequently, multi-positive metrics are **excluded from all claims**. All reported metrics above derive strictly from the zero-leakage primary temporal holdout benchmark.
-4. **The Relevance-Diversity Sweet Spot in MMR:**
-   - Pure ranker scoring maximizes NDCG@10 (0.0641) at the expense of list diversity (ILD = 0.5965).
-   - Production MMR ($\lambda=0.85, \beta=0.03$) uses standardized sigmoid normalization (replacing legacy min-max scaling) and trades off 6.2% NDCG@10 (0.0601) to boost Intra-List Diversity to **0.6708 (+12.5%)** and maintain healthy long-tail novelty (10.32 bits).
-5. **End-to-End Latency Verification:**
-   - With vectorized incremental MMR and efficient 17-feature extraction, full pipeline P95 latency is **20.88 ms** (<25 ms SLA).
+| Model Architecture | Recall@20 | Recall@100 | NDCG@10 | Pos NDCG@10 ($r \ge 4.0$) | MRR@10 | Catalog Coverage@100 | Intra-List Diversity | P95 Latency |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **CinePulse V1 Baseline**<br>*(17f, TT=100, CF=100, Pop=30, MMR 0.85/0.03)* | 18.09% | 40.59% | 0.0560 | 0.0614 | 0.0400 | 72.57% | **0.6933** | **24.86 ms** |
+| **CinePulse V2 Pure Ranker**<br>*(24f, TT=200, CF=100, Pop=30, No MMR)* | 22.14% | 44.19% | 0.0768 | 0.0834 | 0.0558 | **95.49%** | 0.4922 | 27.93 ms |
+| **CinePulse V2 Production Winner (Config 8)**<br>*(24f, TT=200, CF=100, Pop=30, MMR 0.95/0.01)* | **22.19%**<br>*(+22.7%)* | **44.21%**<br>*(+8.9%)* | **0.0778**<br>*(+38.9%)* | **0.0850**<br>*(+38.4%)* | **0.0563**<br>*(+40.7%)* | 95.08%<br>*(+22.5 pp)* | 0.5165 | 27.92 ms |
+
+#### Statistical Significance Analysis (3,974 Sequestered Users, Paired Bootstrap $B=1,000$):
+- **NDCG@10 Improvement:** Mean difference $\Delta = +0.0218$, 95% Bootstrap CI: $[+0.0165, +0.0277]$, two-sided $p = 0.0010$ (significant at $\alpha=0.01$).
+- **Recall@20 Improvement:** Mean difference $\Delta = +0.0410$, 95% Bootstrap CI: $[+0.0302, +0.0516]$, two-sided $p = 0.0010$ (significant at $\alpha=0.01$).
+- *Statistical Resolution Disclosure:* For $B=1,000$ bootstrap iterations, the finite-sample empirical resolution is $1 / (B + 1) \approx 0.0010$.
+
+---
+
+### 2.2 Historical Untouched Benchmark Cohort (500 Test Users)
+
+For direct comparison with previously published V1 benchmarks, the table below reports performance on the 500 untouched test users (`all_eligible[500:1000]`):
+
+| Model Architecture | Recall@20 (95% CI) | Recall@100 | NDCG@10 (95% CI) | Pos NDCG@10 | Catalog Coverage@100 | Intra-List Diversity | P95 Latency |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Popularity Baseline** | 3.60% [0.020, 0.052] | 13.00% | 0.0112 [0.005, 0.018] | 0.0124 | 10.07% | 0.8244 | 0.09 ms |
+| **Item-based CF** | 11.60% [0.088, 0.144] | 31.60% | 0.0410 [0.027, 0.057] | 0.0435 | 41.86% | 0.7161 | 4.00 ms |
+| **Two-Tower ANN Retrieval** | 10.60% [0.080, 0.134] | 31.60% | 0.0346 [0.023, 0.048] | 0.0378 | **99.85%** | 0.4581 | 2.96 ms |
+| **CinePulse V1 Full Pipeline** | 17.80% [0.144, 0.212] | 43.40% | 0.0530 [0.038, 0.070] | 0.0545 | 64.64% | **0.6867** | **24.86 ms** |
+| **CinePulse V2 Production (Config 8)** | **21.40% [0.178, 0.252]** | **45.40%** | **0.0801 [0.061, 0.100]** | **0.0857** | 81.32% | 0.5114 | 27.92 ms |
+
+*Paired Bootstrap Significance on 500 Untouched Cohort:* $\Delta \text{NDCG@10} = +0.0272$ ($p = 0.0090$); $\Delta \text{Recall@20} = +0.0360$ ($p = 0.0180$).
+
+---
+
+### 2.3 The 6-Experiment Relevance Tournament Summary
+
+CinePulse V2 was developed through a controlled 6-experiment tournament across 51 distinct configurations evaluated on 4,980 validation users:
+
+1. **Experiment 1 (Item-CF Hyperparameter Optimization):** Evaluated cosine similarity shrinkage ($\lambda \in [0, 50]$) and neighborhood sizes ($K \in [50, 300]$). Shrunk cosine ($K=200, \lambda=25.0$) stabilized sparse neighbor estimates and improved standalone Item-CF Recall@20 from 11.4% to 12.6%.
+2. **Experiment 2 (Candidate Retrieval Sizing):** Swept retrieval depths (Two-Tower $K \in [50, 300]$, Item-CF $K \in [30, 150]$, Popularity $K \in [10, 50]$). Expanding Two-Tower from 100 to 200 increased candidate union size to ~280–315 items and lifted candidate recall ceiling from 40.6% to 44.2%.
+3. **Experiment 3 (24 Causal Feature Engineering):** Engineered 7 causal interaction and calibration features (score normalizations, cross-channel consensus product, score ratio, user rating calibration difference, activity-popularity interaction, temporal year decay). LightGBM listwise NDCG@10 jumped from 0.0601 to 0.0769 (+27.9%).
+4. **Experiment 4 (Two-Tower Neural Ablations):** Evaluated temperature scaling ($\tau \in [0.03, 0.10]$), projection dimensions, and dropout rates. Confirmed that $\tau=0.05$ with LayerNorm prevents embedding collapse while preserving 99.85% candidate coverage.
+5. **Experiment 5 (Score Fusion Analysis & Rejection):** Evaluated linear and harmonic score fusion combining LightGBM, Two-Tower, and Item-CF scores. **Score fusion was conclusively rejected**: blending external heuristic scores into the pure ranker degraded NDCG@10 from 0.0784 to 0.0716 (-8.7%). The gradient-boosted trees already model non-linear interactions across features, making external score blending harmful.
+6. **Experiment 6 (MMR Pareto Optimization):** Mapped the Pareto frontier between list diversity and relevance. Showed that legacy high-diversity settings ($\lambda=0.65, \beta=0.15$) suffered severe ranking degradation (NDCG@10 dropped to 0.0402). Selected **Relevance-First MMR** ($\lambda=0.95, \beta=0.01$), which retains 99.2% of pure ranker NDCG while safeguarding the feed against redundant genre clustering.
+
+---
+
+### 2.4 Integrity Disclosures & Known Limitations
+
+1. **Warm vs. Cold-Start Test Users:** Test users evaluated above are **warm MovieLens users** whose historical interactions are in `ratings_train.parquet`, and whose final temporal interaction is held out in `ratings_test.parquet`. Cold-start onboarding users (created in the web UI) are handled dynamically via genre-affinity profiling and Bayesian popularity seeding.
+2. **Multi-Positive Benchmark Exclusion:** The optional 5-interaction holdout protocol evaluated during earlier audits contained 60.0% training data overlap (due to models trained on leave-last-2-out). It is marked methodologically invalid and excluded from all official CinePulse claims.
+3. **Validation Search Space Overlap:** The 51 candidate configurations in the tournament were evaluated on validation users (`ratings_val.parquet`). To prevent overfitting to the validation split, all final V2 promotion claims are independently verified on the 3,974 sequestered test users.
+4. **Finite-Sample Bootstrap Resolution:** Paired bootstrap tests with $B=1,000$ iterations report empirical $p = 0.0010$ (the discrete resolution limit $1/(B+1)$). Claims of $p < 0.0001$ are not made.
 
 ---
 

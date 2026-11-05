@@ -77,29 +77,31 @@ class ItemCollaborativeFiltering:
         item_user = csr_matrix((data, (rows, cols)), shape=(num_movies, num_users))
 
         # Compute cosine similarity
-        sim_matrix = cosine_similarity(item_user, dense_output=False)
+        sim_matrix = cosine_similarity(item_user)
+        np.fill_diagonal(sim_matrix, 0.0)
+
+        # Apply shrinkage if requested: s' = s * (n / (n + lambda))
+        if self.shrinkage > 0.0:
+            binary_item_user = csr_matrix((np.ones_like(rows, dtype=np.float32), (rows, cols)), shape=(num_movies, num_users))
+            co_counts = (binary_item_user @ binary_item_user.T).toarray()
+            shrink_factors = co_counts / (co_counts + self.shrinkage)
+            sim_matrix = sim_matrix * shrink_factors
+
+        sim_matrix[sim_matrix < 0.0] = 0.0
 
         # Store top-K neighbors per item with shrinkage
         self.item_similarity = {}
         for i in range(num_movies):
-            row = sim_matrix.getrow(i)
-            indices = row.indices
-            values = row.data
-            # Filter self
-            valid = indices != i
-            ind = indices[valid]
-            val = values[valid]
-
-            if len(ind) > 0:
-                # Keep top K
-                if len(ind) > self.top_k_neighbors:
-                    top_idx = np.argpartition(-val, self.top_k_neighbors)[:self.top_k_neighbors]
-                    ind = ind[top_idx]
-                    val = val[top_idx]
-                sorted_order = np.argsort(-val)
-                self.item_similarity[i] = list(zip(ind[sorted_order].tolist(), val[sorted_order].tolist()))
-            else:
+            row = sim_matrix[i]
+            k_eff = min(self.top_k_neighbors, num_movies - 1)
+            part = np.argpartition(-row, k_eff)[:k_eff]
+            part = part[row[part] > 0.0]
+            if len(part) == 0:
                 self.item_similarity[i] = []
+                continue
+            sort_order = np.argsort(-row[part])
+            sorted_indices = part[sort_order]
+            self.item_similarity[i] = list(zip(sorted_indices.tolist(), row[sorted_indices].tolist()))
 
         logger.info(f"ItemCollaborativeFiltering fitted across {num_movies} items.")
 

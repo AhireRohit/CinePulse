@@ -1,0 +1,13 @@
+{
+  "best_variant": "Ranker-V5 (24 Expanded Features, Conservative Regularized)",
+  "delta_ndcg@10_vs_baseline_ranker": 0.0196,
+  "ci95_ndcg@10": [
+    0.0145,
+    0.025
+  ],
+  "p_value": 0.001,
+  "baseline_ndcg@10": 0.0665,
+  "best_ndcg@10": 0.0861,
+  "baseline_recall@20": 0.2129,
+  "best_recall@20": 0.2446
+}

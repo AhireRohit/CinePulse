@@ -1,0 +1,13 @@
+{
+  "best_variant": "Fusion-V4 (TT-Heavy Blend: 0.70 LGBM + 0.10 CF + 0.20 TT)",
+  "delta_ndcg@10_vs_pure_lgbm": 0.0072,
+  "ci95_ndcg@10": [
+    0.0046,
+    0.0097
+  ],
+  "p_value": 0.001,
+  "pure_lgbm_ndcg@10": 0.0627,
+  "best_ndcg@10": 0.0699,
+  "pure_lgbm_recall@20": 0.2076,
+  "best_recall@20": 0.2153
+}

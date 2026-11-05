@@ -1,0 +1,13 @@
+{
+  "best_variant": "CF-V6 (K=200, Shrink=25, Uniform)",
+  "delta_ndcg@10_vs_baseline_cf": 0.0013,
+  "ci95_ndcg@10": [
+    -0.0003,
+    0.003
+  ],
+  "p_value": 0.1229,
+  "baseline_ndcg@10": 0.0306,
+  "best_ndcg@10": 0.032,
+  "baseline_recall@20": 0.1016,
+  "best_recall@20": 0.1018
+}

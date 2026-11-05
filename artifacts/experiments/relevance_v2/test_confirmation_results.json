@@ -1,0 +1,214 @@
+{
+  "evaluation_timestamp": "2026-11-05T00:26:38Z",
+  "test_dataset": "ratings_test.parquet",
+  "total_test_users": 4974,
+  "cohorts": {
+    "sequestered_cohort": {
+      "description": "3,974 test users (all_eligible[1000:]) never inspected during prior debugging or evaluation",
+      "count": 3974,
+      "metrics": {
+        "1. Published Production Baseline (17f, TT=100, CF=100, Pop=30, MMR 0.85/0.03)": {
+          "recall_at_20": 0.180926019124308,
+          "recall_at_100": 0.4058882737795672,
+          "ndcg_at_10": 0.056039868529894545,
+          "graded_ndcg_at_10": 0.056039868529894545,
+          "pos_ndcg_at_10": 0.06136597653000904,
+          "mrr_at_10": 0.03999598581254344,
+          "catalog_coverage_at_100": 0.7257025761124122,
+          "intra_list_diversity_at_20": 0.6932851414680481,
+          "p95_latency_ms": 24.8568999915733,
+          "mean_latency_ms": 14.189006915966123
+        },
+        "2. Promoted Config 8 (24f, TT=200, CF=100, Pop=30, MMR 0.95/0.01, No Fusion)": {
+          "recall_at_20": 0.22194262707599396,
+          "recall_at_100": 0.44212380473074986,
+          "ndcg_at_10": 0.07782874983209344,
+          "graded_ndcg_at_10": 0.07782874983209344,
+          "pos_ndcg_at_10": 0.0849620007079115,
+          "mrr_at_10": 0.056257738794225964,
+          "catalog_coverage_at_100": 0.9508196721311475,
+          "intra_list_diversity_at_20": 0.5165357447266579,
+          "p95_latency_ms": 27.92113999021239,
+          "mean_latency_ms": 17.15825363895883
+        },
+        "3. New 24f Pure Ranker (24f, TT=200, CF=100, Pop=30, No MMR)": {
+          "recall_at_20": 0.2214393558127831,
+          "recall_at_100": 0.44187216909914445,
+          "ndcg_at_10": 0.07679949872991552,
+          "graded_ndcg_at_10": 0.07679949872991552,
+          "pos_ndcg_at_10": 0.08335980629875187,
+          "mrr_at_10": 0.05578831851479058,
+          "catalog_coverage_at_100": 0.9549180327868853,
+          "intra_list_diversity_at_20": 0.4921517078205943,
+          "p95_latency_ms": 27.93261999031528,
+          "mean_latency_ms": 17.169446441665844
+        }
+      },
+      "significance": {
+        "num_users": 3974,
+        "bootstrap_resamples": 1000,
+        "p_value_resolution_note": "For B=1000 resamples, minimum resolvable empirical p-value is 1/(B+1) ~ 0.001.",
+        "config8_vs_baseline": {
+          "ndcg_diff": 0.0218,
+          "ndcg_ci_95": [
+            0.0165,
+            0.0277
+          ],
+          "ndcg_p_value": 0.001,
+          "recall_diff": 0.041,
+          "recall_ci_95": [
+            0.0302,
+            0.0516
+          ],
+          "recall_p_value": 0.001
+        },
+        "config8_vs_pure_ranker": {
+          "ndcg_diff": 0.001,
+          "ndcg_ci_95": [
+            -0.0009,
+            0.0029
+          ],
+          "ndcg_p_value": 0.2867
+        }
+      }
+    },
+    "all_test_cohort": {
+      "description": "Full set of 4,974 eligible test users (rating >= 3.0)",
+      "count": 4974,
+      "metrics": {
+        "1. Published Production Baseline (17f, TT=100, CF=100, Pop=30, MMR 0.85/0.03)": {
+          "recall_at_20": 0.18114193807800563,
+          "recall_at_100": 0.4131483715319662,
+          "ndcg_at_10": 0.05577366230609653,
+          "graded_ndcg_at_10": 0.05577366230609653,
+          "pos_ndcg_at_10": 0.06043324497793844,
+          "mrr_at_10": 0.04015834721504203,
+          "catalog_coverage_at_100": 0.7280444964871194,
+          "intra_list_diversity_at_20": 0.6674836860597133,
+          "p95_latency_ms": 24.8568999915733,
+          "mean_latency_ms": 14.189006915966123
+        },
+        "2. Promoted Config 8 (24f, TT=200, CF=100, Pop=30, MMR 0.95/0.01, No Fusion)": {
+          "recall_at_20": 0.22396461600321674,
+          "recall_at_100": 0.44632086851628466,
+          "ndcg_at_10": 0.07813151818784762,
+          "graded_ndcg_at_10": 0.07813151818784762,
+          "pos_ndcg_at_10": 0.08452469536116997,
+          "mrr_at_10": 0.05664048289199072,
+          "catalog_coverage_at_100": 0.9596018735362998,
+          "intra_list_diversity_at_20": 0.5015482619553805,
+          "p95_latency_ms": 27.92113999021239,
+          "mean_latency_ms": 17.15825363895883
+        },
+        "3. New 24f Pure Ranker (24f, TT=200, CF=100, Pop=30, No MMR)": {
+          "recall_at_20": 0.22416566143948533,
+          "recall_at_100": 0.4459187776437475,
+          "ndcg_at_10": 0.07763997164434899,
+          "graded_ndcg_at_10": 0.07763997164434899,
+          "pos_ndcg_at_10": 0.0833200165558883,
+          "mrr_at_10": 0.056611442995640825,
+          "catalog_coverage_at_100": 0.9634074941451991,
+          "intra_list_diversity_at_20": 0.4739328987747431,
+          "p95_latency_ms": 27.93261999031528,
+          "mean_latency_ms": 17.169446441665844
+        }
+      },
+      "significance": {
+        "num_users": 4974,
+        "bootstrap_resamples": 1000,
+        "p_value_resolution_note": "For B=1000 resamples, minimum resolvable empirical p-value is 1/(B+1) ~ 0.001.",
+        "config8_vs_baseline": {
+          "ndcg_diff": 0.0224,
+          "ndcg_ci_95": [
+            0.0173,
+            0.0271
+          ],
+          "ndcg_p_value": 0.001,
+          "recall_diff": 0.0428,
+          "recall_ci_95": [
+            0.033,
+            0.0525
+          ],
+          "recall_p_value": 0.001
+        },
+        "config8_vs_pure_ranker": {
+          "ndcg_diff": 0.0005,
+          "ndcg_ci_95": [
+            -0.0011,
+            0.0023
+          ],
+          "ndcg_p_value": 0.5714
+        }
+      }
+    },
+    "untouched_cohort": {
+      "description": "500 untouched test users (all_eligible[500:1000]) corresponding to historical untouched benchmark",
+      "count": 500,
+      "metrics": {
+        "1. Published Production Baseline (17f, TT=100, CF=100, Pop=30, MMR 0.85/0.03)": {
+          "recall_at_20": 0.178,
+          "recall_at_100": 0.434,
+          "ndcg_at_10": 0.05298521881753359,
+          "graded_ndcg_at_10": 0.05298521881753359,
+          "pos_ndcg_at_10": 0.0544744230337666,
+          "mrr_at_10": 0.039754761904761904,
+          "catalog_coverage_at_100": 0.6463700234192038,
+          "intra_list_diversity_at_20": 0.686738959878683,
+          "p95_latency_ms": 24.8568999915733,
+          "mean_latency_ms": 14.189006915966123
+        },
+        "2. Promoted Config 8 (24f, TT=200, CF=100, Pop=30, MMR 0.95/0.01, No Fusion)": {
+          "recall_at_20": 0.214,
+          "recall_at_100": 0.454,
+          "ndcg_at_10": 0.08014437894334127,
+          "graded_ndcg_at_10": 0.08014437894334127,
+          "pos_ndcg_at_10": 0.08565966703585969,
+          "mrr_at_10": 0.06193412698412698,
+          "catalog_coverage_at_100": 0.813231850117096,
+          "intra_list_diversity_at_20": 0.5114339681267739,
+          "p95_latency_ms": 27.92113999021239,
+          "mean_latency_ms": 17.15825363895883
+        },
+        "3. New 24f Pure Ranker (24f, TT=200, CF=100, Pop=30, No MMR)": {
+          "recall_at_20": 0.22,
+          "recall_at_100": 0.454,
+          "ndcg_at_10": 0.08164771623924912,
+          "graded_ndcg_at_10": 0.0816477162392491,
+          "pos_ndcg_at_10": 0.08373398298273256,
+          "mrr_at_10": 0.06326825396825397,
+          "catalog_coverage_at_100": 0.8123536299765808,
+          "intra_list_diversity_at_20": 0.4847881300225854,
+          "p95_latency_ms": 27.93261999031528,
+          "mean_latency_ms": 17.169446441665844
+        }
+      },
+      "significance": {
+        "num_users": 500,
+        "bootstrap_resamples": 1000,
+        "p_value_resolution_note": "For B=1000 resamples, minimum resolvable empirical p-value is 1/(B+1) ~ 0.001.",
+        "config8_vs_baseline": {
+          "ndcg_diff": 0.0272,
+          "ndcg_ci_95": [
+            0.0096,
+            0.0464
+          ],
+          "ndcg_p_value": 0.009,
+          "recall_diff": 0.036,
+          "recall_ci_95": [
+            0.006,
+            0.066
+          ],
+          "recall_p_value": 0.026
+        },
+        "config8_vs_pure_ranker": {
+          "ndcg_diff": -0.0015,
+          "ndcg_ci_95": [
+            -0.0062,
+            0.0035
+          ],
+          "ndcg_p_value": 0.5275
+        }
+      }
+    }
+  }
+}
