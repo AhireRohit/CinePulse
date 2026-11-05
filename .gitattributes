@@ -1,0 +1,10 @@
+# Ensure LightGBM model files and text files maintain LF line endings across OS checkouts
+*.txt text eol=lf
+*.parquet binary
+*.npy binary
+*.pt binary
+*.faiss binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary

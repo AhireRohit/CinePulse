@@ -194,13 +194,20 @@ To independently validate CinePulse V2 (Configuration 8) free from any confirmat
 
 | Recommendation Architecture | Recall@20 (95% CI) | Recall@100 | NDCG@10 (95% CI) | Pos NDCG@10 | Catalog Coverage@100 | Intra-List Diversity | P95 Latency |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **CinePulse V1 Baseline** | 17.80% [0.144, 0.212] | 43.40% | 0.0530 [0.038, 0.070] | 0.0545 | 64.64% | **0.6867** | **24.86 ms** |
+| **CinePulse V1 Baseline (Unified Re-evaluation)** | 17.80% [0.144, 0.212] | 43.40% | 0.0530 [0.038, 0.070] | 0.0545 | 64.64% | **0.6867** | **24.86 ms** |
+| **CinePulse V1 Baseline (Original Offline Report)** | 17.40% [0.142, 0.206] | 44.20% | 0.0601 [0.044, 0.078] | 0.0612 | 71.37% | **0.6708** | **20.88 ms** |
 | **CinePulse V2 Pure Ranker** | 22.00% [0.184, 0.258] | 45.40% | 0.0816 [0.062, 0.102] | 0.0837 | 81.24% | 0.4848 | 27.93 ms |
 | **CinePulse V2 Production (Config 8)** | **21.40% [0.178, 0.252]** | **45.40%** | **0.0801 [0.061, 0.100]** | **0.0857** | **81.32%** | 0.5114 | 27.92 ms |
 
 *Paired Bootstrap Significance on 500 Untouched Cohort:*
 - $\Delta \text{NDCG@10} = +0.0272$, 95% CI: $[+0.0096, +0.0464]$, $p = 0.0090$.
 - $\Delta \text{Recall@20} = +0.0360$, 95% CI: $[+0.0060, +0.0660]$, $p = 0.0180$.
+
+#### Technical Reconciliation: V1 Benchmark Consistency (0.0601 vs. 0.0530)
+Both evaluations evaluated the exact same 500 test users (`all_eligible[500:1000]`, MD5 checksum `1012e3ef31110d3b721b324292c8fcbf`). The slight difference between the original offline report (NDCG@10 = 0.0601 in `artifacts/metrics/evaluation_results_test_untouched.json`) and the unified tournament harness (NDCG@10 = 0.0530 in `artifacts/experiments/relevance_v2/test_confirmation_results.json`) stems from two verified implementation factors:
+1. **Candidate Retrieval Parameterization:** The original V1 evaluation (`pipelines/evaluate.py`) utilized un-shrunk Item-CF ($K=100, \lambda=0.0$), whereas the unified tournament harness (`pipelines/run_test_confirmation.py`) evaluated all configurations with shrinkage parameter $\lambda=25.0$ and $K=200$ neighbors (`EnhancedItemCF(top_k_neighbors=200, shrinkage_lambda=25.0)`). While shrinkage improved standalone Item-CF precision in isolation, candidate pool selection for the 17-feature ranker differed slightly on specific edge items.
+2. **Feature Extractor Vectorization & Calibration:** The original evaluation used `RankingFeatureExtractor` (`src/ranking/features.py`), constructing a Pandas DataFrame row-by-row and applying mean imputation for missing values. The unified harness used `FastRankingFeatureExtractor` (`src/ranking/features_fast.py`), an optimized NumPy matrix extractor that computes calibrated personal rating offsets and vectorized operations directly.
+3. **Statistical Compatibility:** Both metrics fall within each other's 95% bootstrap confidence intervals: $0.0530 \in [0.044, 0.078]$ and $0.0601 \in [0.038, 0.070]$. When expanded to the full sequestered cohort of 3,974 test users, V1 NDCG@10 converges to 0.0560 $[0.052, 0.060]$, demonstrating that the 500-user sample naturally exhibits minor sample variance ($\pm 0.004$). Under either baseline, CinePulse V2 delivers a large, statistically significant improvement (+33.3% to +51.1%).
 
 ---
 
@@ -221,11 +228,18 @@ Benchmarked on CUDA (NVIDIA GeForce RTX 3050 Laptop GPU, AMD Ryzen 7 5800H):
 
 ---
 
+### 4.5 Production Serving Engine vs. Interactive Static Showcase
+To ensure technical transparency, CinePulse distinguishes between its two deployment targets:
+- **FastAPI Real-Time Inference Engine (`src/api/main.py`):** The primary production service executing live GPU/CPU neural retrieval via PyTorch Two-Tower, sub-3ms exact inner product candidate retrieval with FAISS, real-time 24-feature extraction, LightGBM LambdaRank scoring, MMR re-ranking, and dynamic session preference vector updating ($\gamma=0.25$) with SQLite persistence.
+- **GitHub Pages Showcase (`https://ahirerohit.github.io/CinePulse/`):** A zero-cost, static web application designed for interactive portfolio demonstration. It serves precomputed V2 production candidate recommendations (`showcase_data.json`) and verified evaluation benchmarks (`metrics.json`), while handling real-time user actions (likes, dislikes, instant item suppression, genre filtering, and cold-start onboarding) client-side in React 19.
+
+---
+
 ## 5. Deep Empirical Findings & Technical Insights
 
 ### 5.1 Why LightGBM Alone (0.0641) Outperforms Full Pipeline (0.0601) on NDCG@10
 1. **Listwise Optimization Objective:** The LightGBM ranker directly optimizes the LambdaRank listwise objective, sorting candidates strictly to maximize NDCG.
-2. **Intentional Relevance Sacrifice:** MMR intentionally perturbs pure relevance ordering to prevent genre fatigue and redundancy. Moving from pure ranker ($\lambda=1.0$) to balanced MMR ($\lambda=0.85, \beta=0.03$) trades 6.2% NDCG@10 (0.0601 to 0.0601) in exchange for a **+12.5% increase in Intra-List Diversity (0.6708 vs 0.5965)**.
+2. **Intentional Relevance Sacrifice:** MMR intentionally perturbs pure relevance ordering to prevent genre fatigue and redundancy. Moving from pure ranker ($\lambda=1.0$) to balanced MMR ($\lambda=0.85, \beta=0.03$) trades 6.2% NDCG@10 (0.0641 to 0.0601) in exchange for a **+12.5% increase in Intra-List Diversity (0.6708 vs 0.5965)**.
 3. **Mild Diversity Alternative:** If an application strictly prioritizes raw ranking metrics above list diversity, the validation Pareto sweep demonstrates that $\lambda=0.95, \beta=0.00$ maintains NDCG@10 = 0.0667 while still offering a mild +4.3% diversity boost over pure ranking.
 
 ### 5.2 Reconciling Catalog Coverage (Old 97.2% vs. Current 71.37%)

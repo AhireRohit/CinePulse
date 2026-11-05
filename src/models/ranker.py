@@ -143,7 +143,16 @@ class LightGBMRanker:
         filepath = Path(filepath)
         if not filepath.exists():
             raise FileNotFoundError(f"Ranker model file not found at {filepath}")
-        self.booster = lgb.Booster(model_file=str(filepath))
+        # Normalize line endings to LF to prevent C++ LightGBM parsing errors on Windows CRLF
+        with open(filepath, "rb") as f_in:
+            raw_bytes = f_in.read()
+        crlf = bytes([13, 10])
+        lf = bytes([10])
+        if crlf in raw_bytes:
+            clean_str = raw_bytes.replace(crlf, lf).decode("utf-8")
+            self.booster = lgb.Booster(model_str=clean_str)
+        else:
+            self.booster = lgb.Booster(model_file=str(filepath))
         num_features = self.booster.num_feature()
         if num_features == 24:
             self.feature_cols = EXPANDED_FEATURE_COLS

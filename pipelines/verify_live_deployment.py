@@ -1,18 +1,26 @@
 """Independent Playwright automated verification of the live deployed CinePulse V2 site on GitHub Pages.
+
 URL: https://ahirerohit.github.io/CinePulse/
+Enforces real assertions for:
+- Initial load & V2 showcase disclosure indicators
+- Recommendation rails rendering
+- Profile switching (Elena Vance -> Marcus Sterling)
+- Real-time feedback & item suppression
+- Cold-start onboarding user creation & feed generation
+- Offline evaluation benchmarks table rendering
 """
 
-import sys
-import time
 from pathlib import Path
-from playwright.sync_api import sync_playwright
+
+from playwright.sync_api import expect, sync_playwright
 
 URL = "https://ahirerohit.github.io/CinePulse/"
 SCREENSHOT_DIR = Path(__file__).resolve().parent.parent / "artifacts" / "screenshots"
 SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_SCREENSHOT = SCREENSHOT_DIR / "11_v2_public_deployment_verified.png"
 
-def run_verification():
+
+def run_verification() -> None:
     print(f"Launching Playwright verification against live site: {URL}")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -22,78 +30,134 @@ def run_verification():
         # Step 1: Navigate to live URL
         print("1. Loading live page...")
         response = page.goto(URL, wait_until="networkidle", timeout=30000)
-        assert response and response.status == 200, f"Failed to load page, status: {response.status if response else 'None'}"
+        assert response is not None, "Failed to load page: response is None"
+        assert response.status == 200, f"Failed to load page, status: {response.status}"
         print(f"   [PASS] Page loaded with HTTP status {response.status}")
 
         # Step 2: Verify Precomputed V2 Showcase banner & badge
         print("2. Checking V2 Production Showcase indicators...")
-        page.wait_for_selector("text=CinePulse", timeout=10000)
-        content = page.content()
-        assert "Precomputed V2" in content or "V2 Production" in content, "V2 showcase badge/banner not found!"
-        print("   [PASS] Found V2 Production Showcase indicator in UI.")
+        expect(page.locator("text=CinePulse").first).to_be_visible(timeout=10000)
+        v2_badge = page.locator("text=Precomputed V2").first
+        expect(v2_badge).to_be_visible(timeout=5000)
+        print("   [PASS] Verified V2 Production Showcase indicator is visible.")
 
         # Step 3: Verify authentic MovieLens titles in hero and recommendations
         print("3. Inspecting recommendation rails for authentic titles...")
-        page.wait_for_selector("h1, h2, h3", timeout=10000)
-        # Check hero title
-        hero_title = page.locator("h1").first.inner_text()
-        print(f"   [INFO] Hero Spotlight movie: '{hero_title}'")
-        assert len(hero_title) > 2, "Hero spotlight title is empty"
+        hero_heading = page.locator("h1").first
+        expect(hero_heading).to_be_visible(timeout=10000)
+        hero_title = hero_heading.inner_text().strip()
+        print(f"   [INFO] Initial Hero Spotlight movie: '{hero_title}'")
+        assert len(hero_title) > 2, f"Hero spotlight title is unexpectedly short: '{hero_title}'"
 
-        # Check that recommendation cards are rendered
-        cards = page.locator("article, [data-testid='movie-card'], .group.relative")
-        card_count = cards.count()
-        print(f"   [PASS] Found {card_count} recommendation movie cards on page.")
+        movie_cards = page.locator("[data-testid='movie-card']")
+        card_count = movie_cards.count()
+        print(f"   [INFO] Found {card_count} recommendation movie cards.")
+        assert card_count >= 15, f"Expected at least 15 recommendation cards, found {card_count}"
+        first_card_title = movie_cards.first.locator("h4").inner_text().strip()
+        assert len(first_card_title) > 0, "First recommendation card has empty title"
+        print(f"   [PASS] Verified recommendation cards rendering (e.g. '{first_card_title}').")
 
-        # Step 4: User switching
-        print("4. Testing User Switching to Marcus Sterling (#45)...")
-        # Check for user dropdown / select
-        user_select = page.locator("select").first
-        if user_select.is_visible():
-            user_select.select_option("45")
-            page.wait_for_timeout(1000)
-            new_hero = page.locator("h1").first.inner_text()
-            print(f"   [PASS] Switched to Marcus Sterling. New hero title: '{new_hero}'")
-        else:
-            print("   [INFO] User select dropdown selector handled differently; checking user list.")
+        # Step 4: Profile switching (Elena Vance -> Marcus Sterling)
+        print("4. Testing User Profile Switching to Marcus Sterling (#45)...")
+        # Click the profile dropdown button in the Navbar
+        profile_btn = page.locator("header div.relative > button").first
+        expect(profile_btn).to_be_visible()
+        profile_btn.click()
 
-        # Step 5: Test dislike suppression client-side
+        # Click Marcus Sterling persona option
+        marcus_option = page.locator("div:has-text('Marcus Sterling')").last
+        expect(marcus_option).to_be_visible(timeout=5000)
+        marcus_option.click()
+
+        # Assert that the active profile name in Navbar has updated
+        page.wait_for_timeout(1000)
+        expect(page.locator("header").locator("text=Marcus Sterling")).to_be_visible(timeout=5000)
+        new_hero_title = page.locator("h1").first.inner_text().strip()
+        print(f"   [PASS] Successfully switched profile to Marcus Sterling. Hero: '{new_hero_title}'")
+
+        # Step 5: Test feedback dislike & client-side item suppression
         print("5. Testing Dislike action and client-side suppression...")
-        dislike_buttons = page.locator("button[aria-label*='Dislike'], button[title*='Dislike'], button:has-text('Dislike')")
-        if dislike_buttons.count() > 0:
-            dislike_buttons.first.click()
-            page.wait_for_timeout(1000)
-            # Check for notification toast
-            toast = page.locator("text=Recorded in active session").first
-            if toast.is_visible(timeout=3000):
-                print(f"   [PASS] Honest showcase notification appeared: '{toast.inner_text()}'")
-            else:
-                print("   [INFO] Dislike recorded successfully.")
-        else:
-            print("   [INFO] No immediate dislike button on visible cards without hover, hover to check.")
+        target_card = movie_cards.first
+        disliked_title = target_card.locator("h4").inner_text().strip()
+        print(f"   [INFO] Target movie to dislike: '{disliked_title}'")
 
-        # Step 6: Test Benchmarks Tab
-        print("6. Navigating to Benchmarks tab...")
-        benchmarks_tab = page.locator("button:has-text('Benchmarks'), a:has-text('Benchmarks')").first
-        if benchmarks_tab.is_visible():
-            benchmarks_tab.click()
-            page.wait_for_timeout(1500)
-            page_content = page.content()
-            assert "3,974" in page_content or "Sequestered" in page_content or "0.0778" in page_content or "Configuration 8" in page_content, "V2 metrics missing from Benchmarks page!"
-            print("   [PASS] Benchmarks page displays authentic CinePulse V2 metrics & Sequestered cohort!")
+        # Hover to reveal card actions
+        target_card.hover()
+        dislike_btn = target_card.locator("button[title*='Dislike']").first
+        expect(dislike_btn).to_be_visible(timeout=5000)
+        dislike_btn.click()
 
-        # Step 7: Return to Home and capture high-resolution screenshot
-        print("7. Returning to Home and capturing live verification screenshot...")
-        home_tab = page.locator("button:has-text('Home'), a:has-text('Home')").first
-        if home_tab.is_visible():
-            home_tab.click()
-            page.wait_for_timeout(1500)
+        # Assert toast notification appeared
+        toast = page.locator("text=Disliked!").first
+        expect(toast).to_be_visible(timeout=5000)
+        print(f"   [PASS] Verified feedback notification toast: '{toast.inner_text().strip()}'.")
+
+        # Assert session event counter in Navbar updated
+        session_pill = page.locator("header").locator("text=1 Session Events")
+        expect(session_pill).to_be_visible(timeout=5000)
+        print("   [PASS] Verified session telemetry updated in header ('1 Session Events').")
+
+        # Step 6: Test Cold-Start Onboarding User Creation
+        print("6. Testing Cold-Start Onboarding modal and profile creation...")
+        # Open profile dropdown again
+        profile_btn.click()
+        onboarding_btn = page.locator("button:has-text('Create Cold-Start Profile')").first
+        expect(onboarding_btn).to_be_visible(timeout=5000)
+        onboarding_btn.click()
+
+        # Modal should be open
+        expect(page.locator("h2:has-text('Create Custom Profile')").first).to_be_visible(timeout=5000)
+
+        # Fill in profile details
+        name_input = page.locator("input[placeholder*='Maya Lin']").first
+        name_input.fill("Avery Pilot")
+
+        username_input = page.locator("input[placeholder*='maya_lin']").first
+        username_input.fill("avery_pilot")
+
+        # Select genres (Sci-Fi and Animation)
+        scifi_genre_btn = page.locator("button:has-text('Sci-Fi')").first
+        expect(scifi_genre_btn).to_be_visible()
+        scifi_genre_btn.click()
+
+        anim_genre_btn = page.locator("button:has-text('Animation')").first
+        anim_genre_btn.click()
+
+        # Submit onboarding
+        submit_btn = page.locator("button[type='submit']").first
+        expect(submit_btn).to_be_visible()
+        submit_btn.click()
+
+        # Modal should close and Navbar should display Avery Pilot
+        page.wait_for_timeout(1000)
+        expect(page.locator("header").locator("text=Avery Pilot")).to_be_visible(timeout=5000)
+        avery_hero_title = page.locator("h1").first.inner_text().strip()
+        print(f"   [PASS] Onboarding successfully created user 'Avery Pilot'. New feed hero: '{avery_hero_title}'")
+
+        # Step 7: Test Benchmarks Tab rendering
+        print("7. Navigating to Benchmarks tab...")
+        benchmarks_tab = page.locator("header nav button:has-text('Benchmarks'), button:has-text('Benchmarks')").first
+        expect(benchmarks_tab).to_be_visible()
+        benchmarks_tab.click()
+
+        # Assert benchmarks table and metrics are visible
+        expect(page.locator("table").first).to_be_visible(timeout=5000)
+        expect(page.locator("text=CinePulse V2 Production").first).to_be_visible(timeout=5000)
+        expect(page.locator("text=0.0778").first).to_be_visible(timeout=5000)
+        print("   [PASS] Verified Benchmarks tab renders CinePulse V2 Production and 0.0778 NDCG@10.")
+
+        # Step 8: Return to Home and capture high-resolution screenshot
+        print("8. Returning to Discover/Home tab and capturing live verification screenshot...")
+        home_tab = page.locator("header nav button:has-text('Discover'), button:has-text('Discover')").first
+        home_tab.click()
+        page.wait_for_timeout(1500)
 
         page.screenshot(path=str(OUT_SCREENSHOT), full_page=False)
-        print(f"   [PASS] Saved screenshot to {OUT_SCREENSHOT}")
+        print(f"   [PASS] Saved live screenshot to {OUT_SCREENSHOT}")
 
         browser.close()
-        print("\nALL LIVE DEPLOYMENT VERIFICATION CHECKS PASSED SUCCESSFULLY!")
+        print("\nALL STRENGTHENED LIVE PLAYWRIGHT ASSERTIONS PASSED WITH ZERO SKIPS!")
+
 
 if __name__ == "__main__":
     run_verification()

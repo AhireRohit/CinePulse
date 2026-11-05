@@ -101,10 +101,12 @@ For direct comparison with previously published V1 benchmarks, the table below r
 | **Popularity Baseline** | 3.60% [0.020, 0.052] | 13.00% | 0.0112 [0.005, 0.018] | 0.0124 | 10.07% | 0.8244 | 0.09 ms |
 | **Item-based CF** | 11.60% [0.088, 0.144] | 31.60% | 0.0410 [0.027, 0.057] | 0.0435 | 41.86% | 0.7161 | 4.00 ms |
 | **Two-Tower ANN Retrieval** | 10.60% [0.080, 0.134] | 31.60% | 0.0346 [0.023, 0.048] | 0.0378 | **99.85%** | 0.4581 | 2.96 ms |
-| **CinePulse V1 Full Pipeline** | 17.80% [0.144, 0.212] | 43.40% | 0.0530 [0.038, 0.070] | 0.0545 | 64.64% | **0.6867** | **24.86 ms** |
+| **CinePulse V1 Full Pipeline (Unified Re-eval)** | 17.80% [0.144, 0.212] | 43.40% | 0.0530 [0.038, 0.070] | 0.0545 | 64.64% | **0.6867** | **24.86 ms** |
+| **CinePulse V1 Full Pipeline (Original Report)** | 17.40% [0.142, 0.206] | 44.20% | 0.0601 [0.044, 0.078] | 0.0612 | 71.37% | **0.6708** | **20.88 ms** |
 | **CinePulse V2 Production (Config 8)** | **21.40% [0.178, 0.252]** | **45.40%** | **0.0801 [0.061, 0.100]** | **0.0857** | 81.32% | 0.5114 | 27.92 ms |
 
-*Paired Bootstrap Significance on 500 Untouched Cohort:* $\Delta \text{NDCG@10} = +0.0272$ ($p = 0.0090$); $\Delta \text{Recall@20} = +0.0360$ ($p = 0.0180$).
+*Paired Bootstrap Significance on 500 Untouched Cohort:* $\Delta \text{NDCG@10} = +0.0272$ ($p = 0.0090$); $\Delta \text{Recall@20} = +0.0360$ ($p = 0.0180$).  
+*Note on V1 Longitudinal Baseline:* The original V1 evaluation (`pipelines/evaluate.py`) scored 0.0601 NDCG@10 with un-shrunk Item-CF, while the unified confirmation re-evaluation (`pipelines/run_test_confirmation.py`) scored 0.0530 with shrunk Item-CF and calibrated personal rating features. Both numbers fall within each other's 95% bootstrap confidence intervals, and V1 converges to 0.0560 across the full 3,974 sequestered cohort.
 
 ---
 
@@ -214,11 +216,16 @@ npm run dev
 ```
 Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 
+### Option C: Public Interactive Showcase (GitHub Pages)
+
+Experience the live interactive showcase hosted on GitHub Pages: **[https://ahirerohit.github.io/CinePulse/](https://ahirerohit.github.io/CinePulse/)**
+- **Architecture Difference:** The GitHub Pages showcase is a zero-cost static deployment serving precomputed V2 production recommendations and offline evaluation metrics (`showcase_data.json` and `metrics.json`). Client-side state manages session interactions (likes, dislikes, instant item suppression, search, and cold-start onboarding) in the browser. For live GPU/CPU neural retrieval and dynamic model retraining, run the full FastAPI backend locally via Option A, Option B, or Docker.
+
 ---
 
 ## 6. Testing & Quality Assurance
 
-CinePulse includes 30 comprehensive automated tests covering data leakage, model architectures, ranking features, MMR mathematical properties, session adaptation, API endpoints, and complete end-to-end user journeys:
+CinePulse includes 43 comprehensive automated tests covering data leakage, model architectures, ranking features, MMR mathematical properties, session adaptation, API endpoints, and complete end-to-end user journeys:
 
 ```powershell
 # Run the complete test suite
