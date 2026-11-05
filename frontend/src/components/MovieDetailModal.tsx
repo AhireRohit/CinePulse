@@ -1,267 +1,160 @@
-import React, { useEffect, useState } from 'react';
-import { X, Star, ThumbsUp, ThumbsDown, Bookmark, EyeOff, Sparkles } from 'lucide-react';
-import type { MovieDetail } from '../types';
-import { getMovie } from '../api/client';
-
-interface MovieDetailModalProps {
-  movieId: number | null;
-  onClose: () => void;
-  onFeedback: (movieId: number, action: 'like' | 'dislike' | 'save' | 'dismiss' | 'rate', rating?: number) => void;
-}
-
-export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
+import { artwork, displayTitle } from "../moviePresentation";
+import { useEffect, useState } from "react";
+import { ThumbsUp, ThumbsDown, Star } from "lucide-react";
+import type { MovieDetail, RecommendationItem } from "../types";
+import { getMovie, isStaticHost } from "../api/client";
+import { useMovies } from "../state";
+import { Dialog, Poster, Rating, SaveButton } from "./Primitives";
+import { MovieRail } from "./MovieRail";
+export function MovieDetailModal({
   movieId,
   onClose,
-  onFeedback,
-}) => {
-  const [detail, setDetail] = useState<MovieDetail | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [userRating, setUserRating] = useState<number | null>(null);
-
+  recommendation,
+  onOpenDetail,
+}: {
+  movieId: number | null;
+  onClose: () => void;
+  recommendation?: RecommendationItem;
+  onOpenDetail: (id: number) => void;
+}) {
+  const [movie, setMovie] = useState<MovieDetail | null>(null);
+  const [error, setError] = useState(false);
+  const { feedback, liked, disliked, ratings } = useMovies();
   useEffect(() => {
-    if (movieId === null) return;
-    setLoading(true);
-    getMovie(movieId)
-      .then((data) => setDetail(data))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
-  }, [movieId]);
-
-  // Handle Escape key to dismiss modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+    let valid = true;
+    setMovie(null);
+    setError(false);
+    if (movieId !== null)
+      getMovie(movieId)
+        .then((m) => {
+          if (valid) setMovie(m);
+        })
+        .catch(() => {
+          if (valid) setError(true);
+        });
+    return () => {
+      valid = false;
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-
+  }, [movieId]);
   if (movieId === null) return null;
-
   return (
-    <div
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
+    <Dialog
+      title={movie ? displayTitle(movie.title) : "Movie details"}
+      onClose={onClose}
+      className="movie-dialog"
     >
-      <div className="relative w-full max-w-3xl bg-surface-elevated border border-border rounded-2xl shadow-2xl overflow-hidden my-8">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          aria-label="Close modal"
-          data-testid="close-modal"
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-surface/80 hover:bg-surface text-muted hover:text-white border border-border transition"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {loading || !detail ? (
-          <div className="p-16 text-center text-muted">
-            <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-sm">Fetching model diagnostics and movie features...</p>
+      {!movie ? (
+        <div className="dialog-padding">
+          <h2>{error ? "This film couldn’t load." : "Finding your film…"}</h2>
+          {error && (
+            <button className="button secondary" onClick={onClose}>
+              Back to discovering
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="detail-backdrop">
+            {artwork(movie) ? (
+              <img src={artwork(movie)} alt="" />
+            ) : (
+              <div className="detail-poster-art">
+                <Poster url={movie.poster_url} title={movie.title} />
+              </div>
+            )}
+            <div />
           </div>
-        ) : (
-          <div>
-            {/* Header Art / Poster Banner */}
-            <div className="relative bg-gradient-to-r from-neutral-900 via-stone-900 to-slate-900 p-6 sm:p-8 border-b border-border overflow-hidden">
-              {detail.poster_url && (
-                <div className="absolute right-0 top-0 bottom-0 w-1/2 overflow-hidden pointer-events-none opacity-20 hidden sm:block">
-                  <img
-                    src={detail.poster_url}
-                    alt={detail.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-neutral-900 via-neutral-900/60 to-transparent" />
-                </div>
-              )}
-              <div className="flex flex-col sm:flex-row items-start gap-6 relative z-10">
-                {detail.poster_url && (
-                  <div className="w-24 sm:w-28 flex-shrink-0 rounded-xl overflow-hidden shadow-2xl border border-white/10 hidden sm:block">
-                    <img
-                      src={detail.poster_url}
-                      alt={detail.title}
-                      className="w-full h-auto object-cover"
-                    />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    {detail.genres.map((g) => (
-                      <span
-                        key={g}
-                        className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-black/50 border border-white/10 text-gray-200"
-                      >
-                        {g}
-                      </span>
-                    ))}
-                    <span className="text-xs font-mono text-muted">• {detail.release_year}</span>
-                  </div>
-
-                  <h2 className="font-display font-bold text-2xl sm:text-3xl text-white tracking-tight leading-snug">
-                    {detail.title}
-                  </h2>
-                  <p className="text-xs text-muted font-mono mt-1">{detail.full_title}</p>
-
-                  {/* Ratings and Stats */}
-                  <div className="flex flex-wrap items-center gap-6 mt-6 pt-4 border-t border-white/10">
-                    <div className="flex items-center space-x-2">
-                      <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                      <div>
-                        <div className="text-sm font-bold text-white">
-                          {detail.rating_mean.toFixed(2)}{' '}
-                          <span className="text-xs font-normal text-muted">/ 5.0</span>
-                        </div>
-                        <div className="text-[10px] text-muted font-mono">
-                          {detail.rating_count.toLocaleString()} Ratings
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="h-8 w-px bg-white/10 hidden sm:block" />
-
-                    <div>
-                      <div className="text-xs font-mono text-gray-200">
-                        {detail.bayesian_rating.toFixed(2)}
-                      </div>
-                      <div className="text-[10px] text-muted font-mono">Bayesian Weighted Score</div>
-                    </div>
-
-                    <div className="h-8 w-px bg-white/10 hidden sm:block" />
-
-                    <div>
-                      <div className="text-xs font-mono text-accent">MovieLens 1M</div>
-                      <div className="text-[10px] text-muted font-mono">Dataset Item ID #{detail.movieId}</div>
-                    </div>
-                  </div>
+          <div className="detail-body">
+            <div className="detail-poster">
+              <Poster url={movie.poster_url} title={movie.title} eager />
+            </div>
+            <div className="detail-copy">
+              <span className="eyebrow">THE CINEPULSE COLLECTION</span>
+              <h2>{displayTitle(movie.title)}</h2>
+              <div className="detail-meta">
+                {movie.release_year}
+                <span>·</span>
+                {movie.genres.join(" / ")}
+              </div>
+              <div className="detail-rating">
+                <Rating value={movie.rating_mean} />
+                <span className="muted">
+                  {movie.rating_count.toLocaleString()} community ratings
+                </span>
+              </div>
+              {movie.overview && <p className="synopsis">{movie.overview}</p>}
+              <div className="detail-actions">
+                <SaveButton id={movie.movie_idx} />
+                <button
+                  className="button secondary"
+                  aria-pressed={liked.includes(movie.movie_idx)}
+                  onClick={() => void feedback(movie.movie_idx, "like")}
+                >
+                  <ThumbsUp size={17} />
+                  {liked.includes(movie.movie_idx) ? "Liked" : "Like"}
+                </button>
+                <button
+                  className="icon-button"
+                  aria-label="Dislike film"
+                  aria-pressed={disliked.includes(movie.movie_idx)}
+                  onClick={() => void feedback(movie.movie_idx, "dislike")}
+                >
+                  <ThumbsDown size={18} />
+                </button>
+              </div>
+              <div className="personal-rating">
+                <span>Your rating</span>
+                <div role="group" aria-label="Your rating">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      aria-label={`Rate ${n} stars`}
+                      aria-pressed={ratings[movie.movie_idx] === n}
+                      key={n}
+                      onClick={() => void feedback(movie.movie_idx, "rate", n)}
+                    >
+                      <Star
+                        size={22}
+                        fill={
+                          (ratings[movie.movie_idx] || 0) >= n
+                            ? "currentColor"
+                            : "none"
+                        }
+                      />
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
-
-            {/* Body Content */}
-            <div className="p-8 space-y-6">
-              {/* Overview */}
-              <div>
-                <h4 className="text-xs font-mono uppercase tracking-wider text-muted mb-2">
-                  Catalog Synopsis
-                </h4>
-                <p className="text-sm text-gray-300 leading-relaxed">
-                  {detail.overview}
+              <details className="technical">
+                <summary>Why this movie?</summary>
+                <p>
+                  {recommendation?.reason ||
+                    "Opened from the film collection. No personalized recommendation explanation is available for this selection."}
                 </p>
-              </div>
-
-              {/* User Rating & Feedback Interaction */}
-              <div className="p-4 rounded-xl bg-surface border border-border">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <h5 className="text-xs font-medium text-white mb-1">
-                      Rate or React to Train Session
-                    </h5>
-                    <p className="text-[11px] text-muted">
-                      Your rating instantly updates session vectors and candidate reranking.
-                    </p>
-                  </div>
-
-                  {/* 5-Star Rating Buttons */}
-                  <div className="flex items-center space-x-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => {
-                          setUserRating(star);
-                          onFeedback(detail.movie_idx, 'rate', star);
-                        }}
-                        className="p-1 hover:scale-110 transition"
-                      >
-                        <Star
-                          className={`w-5 h-5 ${
-                            (userRating || 0) >= star
-                              ? 'text-amber-400 fill-amber-400'
-                              : 'text-muted-dark hover:text-amber-400'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Quick Action Reactions */}
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => onFeedback(detail.movie_idx, 'like')}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-border text-xs text-gray-200 transition"
-                    >
-                      <ThumbsUp className="w-3.5 h-3.5" />
-                      <span>Like</span>
-                    </button>
-
-                    <button
-                      onClick={() => onFeedback(detail.movie_idx, 'dislike')}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-border text-xs text-gray-200 hover:text-red-400 transition"
-                    >
-                      <ThumbsDown className="w-3.5 h-3.5" />
-                      <span>Dislike</span>
-                    </button>
-
-                    <button
-                      onClick={() => onFeedback(detail.movie_idx, 'save')}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-border text-xs text-accent transition"
-                    >
-                      <Bookmark className="w-3.5 h-3.5" />
-                      <span>Save</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        onFeedback(detail.movie_idx, 'dismiss');
-                        onClose();
-                      }}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-surface-elevated hover:bg-red-500/10 border border-border text-xs text-muted hover:text-red-400 transition"
-                    >
-                      <EyeOff className="w-3.5 h-3.5" />
-                      <span>Dismiss</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Similar Movies Rail */}
-              {detail.similar_movies && detail.similar_movies.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-mono uppercase tracking-wider text-muted mb-3 flex items-center space-x-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-accent" />
-                    <span>Collaborative Filtering Neighbors (Item-CF Similarity)</span>
-                  </h4>
-                  <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-none">
-                    {detail.similar_movies.map((sim) => (
-                      <div
-                        key={sim.movie_idx}
-                        onClick={() => {
-                          setDetail(null);
-                          getMovie(sim.movie_idx).then(setDetail);
-                        }}
-                        className="flex-shrink-0 w-36 p-3 rounded-lg bg-surface border border-border hover:border-border-focus cursor-pointer transition"
-                      >
-                        <h6 className="font-medium text-xs text-white truncate">{sim.title}</h6>
-                        <div className="flex items-center justify-between text-[10px] text-muted mt-1 font-mono">
-                          <span>{sim.release_year}</span>
-                          <span className="text-accent font-semibold">{sim.final_score.toFixed(2)} Sim</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Attribution */}
-              <div className="pt-4 border-t border-border/60 text-center text-[10px] text-muted font-mono">
-                CinePulse Multi-Stage Recommender • MovieLens 1M Dataset • Verified artwork & metadata via IMDb & Wikimedia Commons
-              </div>
+                {recommendation && (
+                  <p>
+                    Candidate source:{" "}
+                    {recommendation.retrieval_source.replaceAll("_", " ")}.
+                  </p>
+                )}
+                <p>
+                  {isStaticHost
+                    ? "Demo profile rankings come from exported V2 results. New profiles use local genre curation. Feedback is stored in this browser."
+                    : "Recommendations are served by the connected recommendation backend."}
+                </p>
+              </details>
             </div>
           </div>
-        )}
-      </div>
-    </div>
+          {movie.similar_movies?.length > 0 && (
+            <div className="detail-similar">
+              <MovieRail
+                title={isStaticHost ? "More in these genres" : "Similar films"}
+                movies={movie.similar_movies}
+                onOpenDetail={onOpenDetail}
+              />
+            </div>
+          )}
+        </>
+      )}
+    </Dialog>
   );
-};
+}

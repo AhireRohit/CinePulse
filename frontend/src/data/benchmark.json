@@ -1,0 +1,51 @@
+{
+  "source": "artifacts/experiments/relevance_v2/test_confirmation_results.json",
+  "users": 3974,
+  "models": [
+    {
+      "name": "V1 \u00b7 Published baseline",
+      "metrics": {
+        "recall_at_20": 0.180926019124308,
+        "recall_at_100": 0.4058882737795672,
+        "ndcg_at_10": 0.056039868529894545,
+        "graded_ndcg_at_10": 0.056039868529894545,
+        "pos_ndcg_at_10": 0.06136597653000904,
+        "mrr_at_10": 0.03999598581254344,
+        "catalog_coverage_at_100": 0.7257025761124122,
+        "intra_list_diversity_at_20": 0.6932851414680481,
+        "p95_latency_ms": 24.8568999915733,
+        "mean_latency_ms": 14.189006915966123
+      }
+    },
+    {
+      "name": "V2 \u00b7 Production",
+      "metrics": {
+        "recall_at_20": 0.22194262707599396,
+        "recall_at_100": 0.44212380473074986,
+        "ndcg_at_10": 0.07782874983209344,
+        "graded_ndcg_at_10": 0.07782874983209344,
+        "pos_ndcg_at_10": 0.0849620007079115,
+        "mrr_at_10": 0.056257738794225964,
+        "catalog_coverage_at_100": 0.9508196721311475,
+        "intra_list_diversity_at_20": 0.5165357447266579,
+        "p95_latency_ms": 27.92113999021239,
+        "mean_latency_ms": 17.15825363895883
+      }
+    },
+    {
+      "name": "V2 \u00b7 Pure ranker",
+      "metrics": {
+        "recall_at_20": 0.2214393558127831,
+        "recall_at_100": 0.44187216909914445,
+        "ndcg_at_10": 0.07679949872991552,
+        "graded_ndcg_at_10": 0.07679949872991552,
+        "pos_ndcg_at_10": 0.08335980629875187,
+        "mrr_at_10": 0.05578831851479058,
+        "catalog_coverage_at_100": 0.9549180327868853,
+        "intra_list_diversity_at_20": 0.4921517078205943,
+        "p95_latency_ms": 27.93261999031528,
+        "mean_latency_ms": 17.169446441665844
+      }
+    }
+  ]
+}

@@ -1,204 +1,295 @@
-import React, { useState, useEffect } from 'react';
-import type { UserProfile, RecommendationFeed } from './types';
-import { getUsers, getRecommendations, postFeedback, isStaticHost } from './api/client';
-import { Navbar } from './components/Navbar';
-import { HomePage } from './pages/HomePage';
-import { ExplorePage } from './pages/ExplorePage';
-import { LibraryPage } from './pages/LibraryPage';
-import { InsightsPage } from './pages/InsightsPage';
-import { EvaluationPage } from './pages/EvaluationPage';
-import { MovieDetailModal } from './components/MovieDetailModal';
-import { OnboardingModal } from './components/OnboardingModal';
-import { SessionDrawer } from './components/SessionDrawer';
-
-export const App: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState('feed');
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { UserProfile, RecommendationFeed } from "./types";
+import {
+  getUsers,
+  getRecommendations,
+  getUserSaved,
+  postFeedback,
+  isStaticHost,
+} from "./api/client";
+import { MovieState, readStored } from "./state";
+import type { FeedbackAction } from "./state";
+import { Navbar } from "./components/Navbar";
+import { HomePage } from "./pages/HomePage";
+import { ExplorePage } from "./pages/ExplorePage";
+import { LibraryPage } from "./pages/LibraryPage";
+import { InsightsPage } from "./pages/InsightsPage";
+import { EvaluationPage } from "./pages/EvaluationPage";
+import { MovieDetailModal } from "./components/MovieDetailModal";
+import { OnboardingModal } from "./components/OnboardingModal";
+import { GlobalSearchBar } from "./components/GlobalSearchBar";
+export default function App() {
+  const [tab, setTab] = useState("feed");
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [feed, setFeed] = useState<RecommendationFeed | null>(null);
-  const [loadingFeed, setLoadingFeed] = useState(false);
-  const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
-  const [onboardingOpen, setOnboardingOpen] = useState(false);
-  const [sessionDrawerOpen, setSessionDrawerOpen] = useState(false);
-  const [sessionEventCount, setSessionEventCount] = useState(0);
-  const [feedbackNotification, setFeedbackNotification] = useState<string | null>(null);
-
-  // Load user profiles on mount
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [movieId, setMovieId] = useState<number | null>(null);
+  const [onboarding, setOnboarding] = useState(false);
+  const [search, setSearch] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [saved, setSaved] = useState<number[]>([]);
+  const [liked, setLiked] = useState<number[]>([]);
+  const [disliked, setDisliked] = useState<number[]>([]);
+  const [ratings, setRatings] = useState<Record<number, number>>({});
+  const request = useRef(0);
+  const activeUser = useRef<number | undefined>(undefined);
+  const navigate = (next: string) => {
+    setTab(next);
+    window.scrollTo({ top: 0 });
+  };
   useEffect(() => {
     getUsers()
       .then((data) => {
         setUsers(data);
-        if (data.length > 0) {
-          setCurrentUser(data[0]);
-        }
+        setUser(
+          data.find(
+            (u) => u.user_idx === readStored("cinepulse_profile", -1),
+          ) ||
+            data[0] ||
+            null,
+        );
+        if (!data.length)
+          setError("Profiles are unavailable. Please reload to try again.");
       })
-      .catch((err) => console.error('Failed to load user profiles:', err));
+      .catch(() =>
+        setError("Profiles couldn’t load. Please reload to try again."),
+      );
   }, []);
-
-  // Fetch recommendations when current user changes
-  const loadFeed = (diversity = 0.85, novelty = 0.03) => {
-    if (!currentUser) return;
-    setLoadingFeed(true);
-    getRecommendations(currentUser.user_idx, { diversity, novelty })
-      .then((data) => setFeed(data))
-      .catch((err) => console.error('Failed to fetch recommendations:', err))
-      .finally(() => setLoadingFeed(false));
-  };
-
+  const loadFeed = useCallback(
+    (diversity = 0.85, novelty = 0.03) => {
+      if (!user) return;
+      const seq = ++request.current;
+      setLoading(true);
+      getRecommendations(user.user_idx, { diversity, novelty })
+        .then((data) => {
+          if (seq === request.current) {
+            setFeed(data);
+            setError("");
+          }
+        })
+        .catch(() => {
+          if (seq === request.current) {
+            setFeed(null);
+            setError("Your recommendations couldn’t load.");
+          }
+        })
+        .finally(() => {
+          if (seq === request.current) setLoading(false);
+        });
+    },
+    [user],
+  );
   useEffect(() => {
-    if (currentUser) {
-      loadFeed();
-    }
-  }, [currentUser]);
-
-  // Handle feedback (Like, Dislike, Save, Dismiss, Rate)
-  const handleFeedback = async (
-    movieId: number,
-    action: 'like' | 'dislike' | 'save' | 'dismiss' | 'rate',
-    rating?: number
+    activeUser.current = user?.user_idx;
+    if (!user) return;
+    setFeed(null);
+    setMovieId(null);
+    setNotice("");
+    loadFeed();
+    const id = user.user_idx;
+    localStorage.setItem("cinepulse_profile", JSON.stringify(id));
+    const savedLocal = readStored<number[]>(`cinepulse_saved_${id}`, []);
+    setSaved(savedLocal);
+    setLiked(readStored(`cinepulse_liked_${id}`, []));
+    setDisliked(readStored(`cinepulse_disliked_${id}`, []));
+    setRatings(readStored(`cinepulse_rated_${id}`, {}));
+    if (!isStaticHost)
+      getUserSaved(id)
+        .then((items) => {
+          if (activeUser.current !== id) return;
+          const removed = readStored<number[]>(`cinepulse_removed_${id}`, []);
+          const combined = [
+            ...new Set([
+              ...savedLocal,
+              ...items.map((m: { movie_idx: number }) => m.movie_idx),
+            ]),
+          ].filter((x) => !removed.includes(x));
+          setSaved(combined);
+          localStorage.setItem(
+            `cinepulse_saved_${id}`,
+            JSON.stringify(combined),
+          );
+        })
+        .catch(() => setNotice("Your backend watchlist could not be loaded."));
+    return () => {
+      ++request.current;
+    };
+  }, [user, loadFeed]);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(""), 3200);
+    return () => clearTimeout(timer);
+  }, [notice]);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (movieId === null && !onboarding) setSearch((s) => !s);
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => document.removeEventListener("keydown", key);
+  }, [movieId, onboarding]);
+  const feedback = async (
+    id: number,
+    action: FeedbackAction,
+    rating?: number,
   ) => {
-    if (!currentUser) return;
+    if (!user) return;
+    const uid = user.user_idx;
+    const removing = action === "save" && saved.includes(id);
     try {
-      await postFeedback(currentUser.user_idx, movieId, action, rating);
-      setSessionEventCount((prev) => prev + 1);
-
-      const msg = isStaticHost
-        ? action === 'like'
-          ? 'Liked! Saved to your session favorites.'
-          : action === 'dislike'
-          ? 'Disliked! Item hidden from recommendations.'
-          : action === 'save'
-          ? 'Saved to your personal Watchlist.'
-          : action === 'rate'
-          ? `Rated ${rating}★! Stored in active session.`
-          : 'Dismissed! Hidden from view.'
-        : action === 'like'
-        ? 'Liked! Real-time recommendations boosted for similar titles.'
-        : action === 'dislike'
-        ? 'Disliked! Item suppressed instantly from candidate pools.'
-        : action === 'save'
-        ? 'Saved to your personal Watchlist.'
-        : action === 'rate'
-        ? `Rated ${rating}★! Session vector dynamically recalibrated.`
-        : 'Dismissed! Hidden from future candidate retrieval.';
-
-      setFeedbackNotification(msg);
-      setTimeout(() => setFeedbackNotification(null), 3500);
-
-      // Refresh recommendations to demonstrate real-time dynamic adaptation
-      loadFeed();
-    } catch (err) {
-      console.error('Failed to submit feedback:', err);
+      if (!removing) await postFeedback(uid, id, action, rating);
+      const key = `cinepulse_${action === "save" ? "saved" : action === "like" ? "liked" : action === "dislike" ? "disliked" : action === "rate" ? "rated" : "dismissed"}_${uid}`;
+      if (action === "rate") {
+        const next = {
+          ...readStored<Record<number, number>>(key, {}),
+          [id]: rating!,
+        };
+        localStorage.setItem(key, JSON.stringify(next));
+        if (activeUser.current === uid) setRatings(next);
+      } else {
+        const prev = readStored<number[]>(key, []);
+        const next = removing
+          ? prev.filter((x) => x !== id)
+          : [...new Set([...prev, id])];
+        localStorage.setItem(key, JSON.stringify(next));
+        if (action === "save") {
+          const removedKey = `cinepulse_removed_${uid}`;
+          const prevRemoved = readStored<number[]>(removedKey, []);
+          localStorage.setItem(
+            removedKey,
+            JSON.stringify(
+              removing
+                ? [...new Set([...prevRemoved, id])]
+                : prevRemoved.filter((x) => x !== id),
+            ),
+          );
+        }
+        if (activeUser.current === uid) {
+          if (action === "save") setSaved(next);
+          if (action === "like") setLiked(next);
+          if (action === "dislike") setDisliked(next);
+        }
+      }
+      if (activeUser.current !== uid) return;
+      setNotice(
+        removing
+          ? "Removed from your list."
+          : action === "save"
+            ? "Saved for another evening."
+            : action === "rate"
+              ? `Your ${rating}-star rating is saved.`
+              : action === "like"
+                ? "Added to your liked films."
+                : "Hidden from your discoveries.",
+      );
+      if (action === "dislike" || action === "dismiss")
+        setFeed((f) =>
+          f
+            ? {
+                ...f,
+                hero_featured:
+                  f.hero_featured?.movie_idx === id
+                    ? undefined
+                    : f.hero_featured,
+                rails: Object.fromEntries(
+                  Object.entries(f.rails).map(([name, items]) => [
+                    name,
+                    items.filter((m) => m.movie_idx !== id),
+                  ]),
+                ),
+              }
+            : f,
+        );
+      if (!isStaticHost && action !== "save") loadFeed();
+    } catch {
+      setNotice("Couldn’t save that change. Please try again.");
     }
   };
-
+  const recommendation = feed
+    ? [feed.hero_featured, ...Object.values(feed.rails).flat()].find(
+        (m) => m?.movie_idx === movieId,
+      )
+    : undefined;
   return (
-    <div className="min-h-screen bg-background text-gray-100 flex flex-col font-sans selection:bg-accent selection:text-black">
-      {/* Top Navigation Bar with Embedded Global Search */}
+    <MovieState.Provider value={{ saved, liked, disliked, ratings, feedback }}>
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
       <Navbar
-        currentTab={currentTab}
-        setCurrentTab={setCurrentTab}
+        currentTab={tab}
+        setCurrentTab={navigate}
         users={users}
-        currentUser={currentUser}
-        onSelectUser={(u) => {
-          setCurrentUser(u);
-          setSessionEventCount(0);
-        }}
-        onOpenOnboarding={() => setOnboardingOpen(true)}
-        sessionEventCount={sessionEventCount}
-        onOpenDetail={(id) => setSelectedMovieId(id)}
-        onFeedback={handleFeedback}
-        onOpenSessionDrawer={() => setSessionDrawerOpen(true)}
+        currentUser={user}
+        onSelectUser={setUser}
+        onOpenOnboarding={() => setOnboarding(true)}
+        onSearch={() => setSearch(true)}
       />
-
-      {/* Floating Session Real-time Adaptation Toast */}
-      {feedbackNotification && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-surface-elevated border border-accent/40 shadow-2xl flex items-center space-x-3 text-xs text-white animate-fade-in">
-          <span className="w-2.5 h-2.5 rounded-full bg-accent animate-ping" />
-          <span className="font-medium">{feedbackNotification}</span>
-        </div>
-      )}
-
-      {/* Main Content Pages */}
-      <main className="flex-1">
-        {currentTab === 'feed' && (
+      <main id="main">
+        {error && (
+          <div className="error-banner" role="alert">
+            {error} <button onClick={() => loadFeed()}>Retry</button>
+          </div>
+        )}
+        {tab === "feed" && (
           <HomePage
             feed={feed}
-            loading={loadingFeed}
+            loading={loading}
             onRefresh={loadFeed}
-            onOpenDetail={(id) => setSelectedMovieId(id)}
-            onFeedback={handleFeedback}
-            activeProfileName={currentUser?.display_name || 'You'}
+            onOpenDetail={setMovieId}
+            activeProfileName={user?.display_name || "you"}
           />
         )}
-
-        {currentTab === 'explore' && (
-          <ExplorePage
-            onOpenDetail={(id) => setSelectedMovieId(id)}
-            onFeedback={handleFeedback}
-          />
-        )}
-
-        {currentTab === 'library' && (
+        {tab === "explore" && <ExplorePage onOpenDetail={setMovieId} />}
+        {tab === "library" && (
           <LibraryPage
-            currentUser={currentUser}
-            onOpenDetail={(id) => setSelectedMovieId(id)}
-            onFeedback={handleFeedback}
+            currentUser={user}
+            onOpenDetail={setMovieId}
+            onExplore={() => navigate("explore")}
           />
         )}
-
-        {currentTab === 'insights' && (
-          <InsightsPage currentUser={currentUser} />
-        )}
-
-        {currentTab === 'evaluation' && (
-          <EvaluationPage />
-        )}
+        {tab === "insights" && <InsightsPage currentUser={user} />}
+        {tab === "evaluation" && <EvaluationPage />}
       </main>
-
-      {/* Editorial Footer */}
-      <footer className="border-t border-border py-8 text-center text-xs text-muted bg-surface/30">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center space-x-2">
-            <span className="font-display font-extrabold text-white tracking-wider">CINEPULSE</span>
-            <span>— Production-Grade Multi-Stage Recommendation Platform</span>
-          </div>
-          <div className="text-[11px] font-mono text-muted">
-            GroupLens MovieLens 1M • Two-Tower Neural Retrieval • LightGBM LambdaRank • FAISS ANN
-          </div>
+      <footer className="content-width site-footer">
+        <div>
+          <span className="footer-brand">
+            cinepulse<span>.</span>
+          </span>
+          <p>For the love of finding a great film.</p>
         </div>
       </footer>
-
-      {/* Movie Details Modal */}
+      {notice && (
+        <div className="toast" role="status">
+          {notice}
+        </div>
+      )}
+      {search && (
+        <GlobalSearchBar
+          onClose={() => setSearch(false)}
+          onOpenDetail={setMovieId}
+        />
+      )}
       <MovieDetailModal
-        movieId={selectedMovieId}
-        onClose={() => setSelectedMovieId(null)}
-        onFeedback={handleFeedback}
+        key={movieId ?? "closed"}
+        movieId={movieId}
+        onClose={() => setMovieId(null)}
+        recommendation={recommendation}
+        onOpenDetail={setMovieId}
       />
-
-      {/* Real-time Session Adaptation Slide-over Drawer */}
-      <SessionDrawer
-        isOpen={sessionDrawerOpen}
-        onClose={() => setSessionDrawerOpen(false)}
-        currentUser={currentUser}
-        sessionEventCount={sessionEventCount}
-        onFeedback={handleFeedback}
-        onRefreshFeed={() => loadFeed()}
-      />
-
-      {/* Cold-Start Onboarding Modal */}
-      {onboardingOpen && (
+      {onboarding && (
         <OnboardingModal
-          onClose={() => setOnboardingOpen(false)}
-          onUserCreated={(newUser) => {
-            setUsers((prev) => [...prev, newUser]);
-            setCurrentUser(newUser);
-            setSessionEventCount(0);
+          onClose={() => setOnboarding(false)}
+          onUserCreated={(u) => {
+            setUsers((prev) => [...prev, u]);
+            setUser(u);
+            navigate("feed");
           }}
         />
       )}
-    </div>
+    </MovieState.Provider>
   );
-};
-
-export default App;
+}
