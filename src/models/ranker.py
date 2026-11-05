@@ -6,7 +6,8 @@ import pandas as pd
 
 from src.core.logging import logger
 
-RANKER_FEATURE_COLS = [
+EXPANDED_FEATURE_COLS = [
+    # Baseline 17 features
     "candidate_rank",
     "two_tower_score",
     "cf_score",
@@ -24,13 +25,24 @@ RANKER_FEATURE_COLS = [
     "is_source_popularity",
     "cf_x_bayesian",
     "tt_x_genre",
+    # 7 New High-Fidelity Causal Features (Config 8)
+    "source_count",
+    "cf_score_normalized",
+    "tt_score_normalized",
+    "score_product",
+    "user_rating_calib_diff",
+    "rating_count_confidence",
+    "recent_genre_cosine",
 ]
+
+RANKER_FEATURE_COLS = EXPANDED_FEATURE_COLS[:17]
 
 
 class LightGBMRanker:
     """
     LightGBM LambdaRank personalized ranking model.
     Reranks candidate items using cross-tower, CF, genre affinity, and item quality features.
+    Supports both 17-feature v1 and 24-feature v2 (Config 8) models.
     """
 
     def __init__(
@@ -40,8 +52,10 @@ class LightGBMRanker:
         num_leaves: int = 31,
         min_child_samples: int = 15,
         objective: str = "lambdarank",
+        use_expanded_features: bool = False,
     ):
-        self.feature_cols = RANKER_FEATURE_COLS
+        self.use_expanded_features = use_expanded_features
+        self.feature_cols = EXPANDED_FEATURE_COLS if use_expanded_features else RANKER_FEATURE_COLS
         self.objective = objective
         self.model = lgb.LGBMRanker(
             objective=objective,
@@ -55,6 +69,7 @@ class LightGBMRanker:
             importance_type="gain",
             n_jobs=-1,
         )
+        self.booster: lgb.Booster | None = None
         self.is_fitted = False
 
     def fit(
@@ -99,6 +114,8 @@ class LightGBMRanker:
         if features_df.empty:
             return np.array([], dtype=np.float32)
 
+        if self.booster is not None:
+            return self.booster.predict(features_df[self.feature_cols].values)
         return self.model.predict(features_df[self.feature_cols])
 
     def rank(self, features_df: pd.DataFrame) -> list[tuple[int, float]]:
@@ -126,9 +143,16 @@ class LightGBMRanker:
         filepath = Path(filepath)
         if not filepath.exists():
             raise FileNotFoundError(f"Ranker model file not found at {filepath}")
-        booster = lgb.Booster(model_file=str(filepath))
+        self.booster = lgb.Booster(model_file=str(filepath))
+        num_features = self.booster.num_feature()
+        if num_features == 24:
+            self.feature_cols = EXPANDED_FEATURE_COLS
+            self.use_expanded_features = True
+        else:
+            self.feature_cols = RANKER_FEATURE_COLS
+            self.use_expanded_features = False
         self.model = lgb.LGBMRanker()
-        self.model._Booster = booster
+        self.model._Booster = self.booster
         self.model.fitted_ = True
         self.is_fitted = True
-        logger.info(f"Loaded LightGBM ranker model from {filepath}")
+        logger.info(f"Loaded LightGBM ranker model from {filepath} ({num_features} features: {len(self.feature_cols)} configured)")

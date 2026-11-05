@@ -1,0 +1,28 @@
+{
+  "grand_champion_vs_baseline_full_pipeline": {
+    "delta_ndcg@10": 0.0418,
+    "ci95_ndcg@10": [
+      0.0356,
+      0.0484
+    ],
+    "p_value": 0.001,
+    "baseline_full_ndcg@10": 0.0436,
+    "champion_full_ndcg@10": 0.0854,
+    "baseline_full_recall@20": 0.161,
+    "champion_full_recall@20": 0.2424,
+    "baseline_full_ild": 0.7954,
+    "champion_full_ild": 0.5424
+  },
+  "pure_champion_vs_baseline_pure_ranker": {
+    "delta_ndcg@10": 0.0181,
+    "ci95_ndcg@10": [
+      0.0125,
+      0.0241
+    ],
+    "p_value": 0.001,
+    "baseline_pure_ndcg@10": 0.0665,
+    "champion_pure_ndcg@10": 0.0847,
+    "baseline_pure_recall@20": 0.2129,
+    "champion_pure_recall@20": 0.2438
+  }
+}

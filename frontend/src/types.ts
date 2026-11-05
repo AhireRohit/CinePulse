@@ -32,6 +32,8 @@ export interface RecommendationItem {
 
 export interface RecommendationFeed {
   user_idx: number;
+  model_version?: string;
+  pipeline?: string;
   hero_featured?: RecommendationItem;
   rails: Record<string, RecommendationItem[]>;
   total_candidates: number;

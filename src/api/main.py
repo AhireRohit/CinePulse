@@ -49,12 +49,17 @@ async def lifespan(app: FastAPI):
         num_users = mappings["num_users"]
         num_movies = mappings["num_movies"]
 
+        user_train_ratings: dict[int, dict[int, float]] = {}
+        for row in train_ratings[["user_idx", "movie_idx", "rating"]].itertuples(index=False):
+            user_train_ratings.setdefault(int(row.user_idx), {})[int(row.movie_idx)] = float(row.rating)
+
         # Initialize Recommendation Engine
         engine = RecommendationEngine(
             movies_df=movies_df,
             mappings=mappings,
             genre_cols=genre_cols,
             user_histories=user_histories,
+            user_train_ratings=user_train_ratings,
         )
 
         # Fit baselines
@@ -90,11 +95,17 @@ async def lifespan(app: FastAPI):
             logger.info("Loading FAISS candidate index...")
             engine.faiss_index.load(settings.indices_dir)
 
-        # Load LightGBM Ranker
-        ranker_path = settings.models_dir / "ranker_lgbm.txt"
-        if ranker_path.exists():
-            logger.info("Loading LightGBM Ranker...")
-            engine.ranker.load(ranker_path)
+        # Load LightGBM Ranker based on active model_version
+        if settings.model_version == "v2" and settings.v2_ranker_path.exists():
+            logger.info(f"Loading Config 8 LightGBM Ranker from {settings.v2_ranker_path}...")
+            engine.ranker.load(settings.v2_ranker_path)
+            engine.feature_extractor.use_expanded = True
+        else:
+            ranker_path = settings.models_dir / "ranker_lgbm.txt"
+            if ranker_path.exists():
+                logger.info(f"Loading Baseline LightGBM Ranker from {ranker_path}...")
+                engine.ranker.load(ranker_path)
+                engine.feature_extractor.use_expanded = False
 
         # Restore persistent user feedback and session state from SQLite
         logger.info("Restoring persisted user sessions and feedback from database...")

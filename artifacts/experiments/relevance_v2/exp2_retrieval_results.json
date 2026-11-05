@@ -1,0 +1,394 @@
+{
+  "Ret-C1 (Baseline: TT=100, CF=100, Pop=30)": {
+    "experiment_name": "Ret-C1 (Baseline: TT=100, CF=100, Pop=30)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.1249,
+    "recall@20": 0.2076,
+    "recall@20_ci95": [
+      0.195,
+      0.2195
+    ],
+    "recall@50": 0.34,
+    "recall@100": 0.4408,
+    "ndcg@5": 0.0462,
+    "ndcg@10": 0.0627,
+    "ndcg@10_ci95": [
+      0.0573,
+      0.0685
+    ],
+    "ndcg@20": 0.0834,
+    "mrr@10": 0.044,
+    "positive_only_recall@20": 0.219,
+    "positive_only_recall@20_ci95": [
+      0.2056,
+      0.2331
+    ],
+    "positive_only_ndcg@10": 0.0668,
+    "positive_only_ndcg@10_ci95": [
+      0.0608,
+      0.073
+    ],
+    "graded_ndcg@10": 0.0517,
+    "catalog_coverage@20": 0.4763,
+    "catalog_coverage@100": 0.7216,
+    "intra_list_diversity": 0.5958,
+    "novelty_bits": 10.11,
+    "latency_p50_ms": 6.97,
+    "latency_p95_ms": 9.2,
+    "train_or_opt_runtime_sec": 59.6,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like.",
+    "candidate_pool_mean": 202.0,
+    "candidate_pool_p95": 215.0,
+    "candidate_union_recall": 0.5131,
+    "oracle_hit_rate_ceiling": 0.5131,
+    "retrieval_p50_ms": 3.17,
+    "retrieval_p95_ms": 12.75,
+    "ranking_p95_ms": 9.2
+  },
+  "Ret-C2 (Narrow: TT=100, CF=50, Pop=20)": {
+    "experiment_name": "Ret-C2 (Narrow: TT=100, CF=50, Pop=20)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.1293,
+    "recall@20": 0.2068,
+    "recall@20_ci95": [
+      0.1954,
+      0.2177
+    ],
+    "recall@50": 0.3265,
+    "recall@100": 0.4219,
+    "ndcg@5": 0.0489,
+    "ndcg@10": 0.0655,
+    "ndcg@10_ci95": [
+      0.0601,
+      0.0711
+    ],
+    "ndcg@20": 0.085,
+    "mrr@10": 0.0464,
+    "positive_only_recall@20": 0.2185,
+    "positive_only_recall@20_ci95": [
+      0.205,
+      0.2325
+    ],
+    "positive_only_ndcg@10": 0.0704,
+    "positive_only_ndcg@10_ci95": [
+      0.064,
+      0.0765
+    ],
+    "graded_ndcg@10": 0.054,
+    "catalog_coverage@20": 0.4953,
+    "catalog_coverage@100": 0.978,
+    "intra_list_diversity": 0.5987,
+    "novelty_bits": 10.12,
+    "latency_p50_ms": 6.48,
+    "latency_p95_ms": 8.48,
+    "train_or_opt_runtime_sec": 56.86,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like.",
+    "candidate_pool_mean": 155.3,
+    "candidate_pool_p95": 164.0,
+    "candidate_union_recall": 0.457,
+    "oracle_hit_rate_ceiling": 0.457,
+    "retrieval_p50_ms": 3.12,
+    "retrieval_p95_ms": 12.41,
+    "ranking_p95_ms": 8.48
+  },
+  "Ret-C3 (Deep TT: TT=200, CF=100, Pop=30)": {
+    "experiment_name": "Ret-C3 (Deep TT: TT=200, CF=100, Pop=30)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.1273,
+    "recall@20": 0.2036,
+    "recall@20_ci95": [
+      0.1922,
+      0.2157
+    ],
+    "recall@50": 0.347,
+    "recall@100": 0.4657,
+    "ndcg@5": 0.0477,
+    "ndcg@10": 0.064,
+    "ndcg@10_ci95": [
+      0.0588,
+      0.0693
+    ],
+    "ndcg@20": 0.0832,
+    "mrr@10": 0.0451,
+    "positive_only_recall@20": 0.2165,
+    "positive_only_recall@20_ci95": [
+      0.203,
+      0.2299
+    ],
+    "positive_only_ndcg@10": 0.0689,
+    "positive_only_ndcg@10_ci95": [
+      0.0623,
+      0.0751
+    ],
+    "graded_ndcg@10": 0.0528,
+    "catalog_coverage@20": 0.4508,
+    "catalog_coverage@100": 0.6733,
+    "intra_list_diversity": 0.6,
+    "novelty_bits": 10.07,
+    "latency_p50_ms": 7.97,
+    "latency_p95_ms": 10.39,
+    "train_or_opt_runtime_sec": 65.64,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like.",
+    "candidate_pool_mean": 295.2,
+    "candidate_pool_p95": 314.0,
+    "candidate_union_recall": 0.6054,
+    "oracle_hit_rate_ceiling": 0.6054,
+    "retrieval_p50_ms": 3.25,
+    "retrieval_p95_ms": 12.72,
+    "ranking_p95_ms": 10.39
+  },
+  "Ret-C4 (Wide TT: TT=300, CF=100, Pop=30)": {
+    "experiment_name": "Ret-C4 (Wide TT: TT=300, CF=100, Pop=30)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.1265,
+    "recall@20": 0.2034,
+    "recall@20_ci95": [
+      0.1924,
+      0.2151
+    ],
+    "recall@50": 0.3472,
+    "recall@100": 0.4733,
+    "ndcg@5": 0.0478,
+    "ndcg@10": 0.0637,
+    "ndcg@10_ci95": [
+      0.0583,
+      0.0689
+    ],
+    "ndcg@20": 0.083,
+    "mrr@10": 0.0449,
+    "positive_only_recall@20": 0.2147,
+    "positive_only_recall@20_ci95": [
+      0.201,
+      0.2282
+    ],
+    "positive_only_ndcg@10": 0.0678,
+    "positive_only_ndcg@10_ci95": [
+      0.0612,
+      0.0742
+    ],
+    "graded_ndcg@10": 0.0525,
+    "catalog_coverage@20": 0.4353,
+    "catalog_coverage@100": 0.6511,
+    "intra_list_diversity": 0.6,
+    "novelty_bits": 10.05,
+    "latency_p50_ms": 8.62,
+    "latency_p95_ms": 10.99,
+    "train_or_opt_runtime_sec": 69.16,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like.",
+    "candidate_pool_mean": 389.3,
+    "candidate_pool_p95": 413.0,
+    "candidate_union_recall": 0.6582,
+    "oracle_hit_rate_ceiling": 0.6582,
+    "retrieval_p50_ms": 3.25,
+    "retrieval_p95_ms": 12.44,
+    "ranking_p95_ms": 10.99
+  },
+  "Ret-C5 (Deep Hybrid: TT=200, CF=150, Pop=30)": {
+    "experiment_name": "Ret-C5 (Deep Hybrid: TT=200, CF=150, Pop=30)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.1265,
+    "recall@20": 0.2054,
+    "recall@20_ci95": [
+      0.194,
+      0.2173
+    ],
+    "recall@50": 0.3534,
+    "recall@100": 0.4761,
+    "ndcg@5": 0.0497,
+    "ndcg@10": 0.0655,
+    "ndcg@10_ci95": [
+      0.06,
+      0.0712
+    ],
+    "ndcg@20": 0.0854,
+    "mrr@10": 0.0472,
+    "positive_only_recall@20": 0.217,
+    "positive_only_recall@20_ci95": [
+      0.2033,
+      0.2308
+    ],
+    "positive_only_ndcg@10": 0.0685,
+    "positive_only_ndcg@10_ci95": [
+      0.0619,
+      0.0751
+    ],
+    "graded_ndcg@10": 0.054,
+    "catalog_coverage@20": 0.4628,
+    "catalog_coverage@100": 0.6537,
+    "intra_list_diversity": 0.5939,
+    "novelty_bits": 10.12,
+    "latency_p50_ms": 7.71,
+    "latency_p95_ms": 9.51,
+    "train_or_opt_runtime_sec": 62.87,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like.",
+    "candidate_pool_mean": 335.3,
+    "candidate_pool_p95": 360.0,
+    "candidate_union_recall": 0.6416,
+    "oracle_hit_rate_ceiling": 0.6416,
+    "retrieval_p50_ms": 3.06,
+    "retrieval_p95_ms": 11.91,
+    "ranking_p95_ms": 9.51
+  },
+  "Ret-C6 (Max Hybrid: TT=300, CF=150, Pop=30)": {
+    "experiment_name": "Ret-C6 (Max Hybrid: TT=300, CF=150, Pop=30)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.1259,
+    "recall@20": 0.2034,
+    "recall@20_ci95": [
+      0.1924,
+      0.2155
+    ],
+    "recall@50": 0.3498,
+    "recall@100": 0.4829,
+    "ndcg@5": 0.0493,
+    "ndcg@10": 0.065,
+    "ndcg@10_ci95": [
+      0.0598,
+      0.0705
+    ],
+    "ndcg@20": 0.0845,
+    "mrr@10": 0.0468,
+    "positive_only_recall@20": 0.2133,
+    "positive_only_recall@20_ci95": [
+      0.1998,
+      0.2274
+    ],
+    "positive_only_ndcg@10": 0.0675,
+    "positive_only_ndcg@10_ci95": [
+      0.061,
+      0.0741
+    ],
+    "graded_ndcg@10": 0.0536,
+    "catalog_coverage@20": 0.4526,
+    "catalog_coverage@100": 0.6396,
+    "intra_list_diversity": 0.5945,
+    "novelty_bits": 10.09,
+    "latency_p50_ms": 8.54,
+    "latency_p95_ms": 10.63,
+    "train_or_opt_runtime_sec": 69.2,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like.",
+    "candidate_pool_mean": 426.9,
+    "candidate_pool_p95": 459.0,
+    "candidate_union_recall": 0.69,
+    "oracle_hit_rate_ceiling": 0.69,
+    "retrieval_p50_ms": 3.19,
+    "retrieval_p95_ms": 12.0,
+    "ranking_p95_ms": 10.63
+  },
+  "Ret-C7 (TT Only: TT=200, CF=0, Pop=0)": {
+    "experiment_name": "Ret-C7 (TT Only: TT=200, CF=0, Pop=0)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.1131,
+    "recall@20": 0.1857,
+    "recall@20_ci95": [
+      0.1753,
+      0.197
+    ],
+    "recall@50": 0.3179,
+    "recall@100": 0.4223,
+    "ndcg@5": 0.0417,
+    "ndcg@10": 0.0566,
+    "ndcg@10_ci95": [
+      0.0521,
+      0.0617
+    ],
+    "ndcg@20": 0.0748,
+    "mrr@10": 0.0398,
+    "positive_only_recall@20": 0.1921,
+    "positive_only_recall@20_ci95": [
+      0.1792,
+      0.2058
+    ],
+    "positive_only_ndcg@10": 0.0593,
+    "positive_only_ndcg@10_ci95": [
+      0.0532,
+      0.0651
+    ],
+    "graded_ndcg@10": 0.0467,
+    "catalog_coverage@20": 0.5978,
+    "catalog_coverage@100": 0.9789,
+    "intra_list_diversity": 0.5765,
+    "novelty_bits": 10.41,
+    "latency_p50_ms": 6.01,
+    "latency_p95_ms": 7.87,
+    "train_or_opt_runtime_sec": 35.41,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like.",
+    "candidate_pool_mean": 200.0,
+    "candidate_pool_p95": 200.0,
+    "candidate_union_recall": 0.4813,
+    "oracle_hit_rate_ceiling": 0.4813,
+    "retrieval_p50_ms": 0.36,
+    "retrieval_p95_ms": 0.55,
+    "ranking_p95_ms": 7.87
+  },
+  "Ret-C8 (CF Only: TT=0, CF=200, Pop=0)": {
+    "experiment_name": "Ret-C8 (CF Only: TT=0, CF=200, Pop=0)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.1127,
+    "recall@20": 0.1803,
+    "recall@20_ci95": [
+      0.1691,
+      0.1912
+    ],
+    "recall@50": 0.2823,
+    "recall@100": 0.3633,
+    "ndcg@5": 0.0417,
+    "ndcg@10": 0.0561,
+    "ndcg@10_ci95": [
+      0.0509,
+      0.0614
+    ],
+    "ndcg@20": 0.0731,
+    "mrr@10": 0.0391,
+    "positive_only_recall@20": 0.1938,
+    "positive_only_recall@20_ci95": [
+      0.1803,
+      0.2073
+    ],
+    "positive_only_ndcg@10": 0.0579,
+    "positive_only_ndcg@10_ci95": [
+      0.0519,
+      0.0635
+    ],
+    "graded_ndcg@10": 0.0462,
+    "catalog_coverage@20": 0.4136,
+    "catalog_coverage@100": 0.4693,
+    "intra_list_diversity": 0.6168,
+    "novelty_bits": 9.88,
+    "latency_p50_ms": 4.47,
+    "latency_p95_ms": 8.23,
+    "train_or_opt_runtime_sec": 47.4,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like.",
+    "candidate_pool_mean": 200.0,
+    "candidate_pool_p95": 200.0,
+    "candidate_union_recall": 0.4239,
+    "oracle_hit_rate_ceiling": 0.4239,
+    "retrieval_p50_ms": 2.72,
+    "retrieval_p95_ms": 12.85,
+    "ranking_p95_ms": 8.23
+  }
+}

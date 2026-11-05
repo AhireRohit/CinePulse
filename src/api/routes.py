@@ -129,15 +129,15 @@ async def create_user(req: CreateUserRequest, db: AsyncSession = Depends(get_db)
 async def get_recommendations(
     user_id: int,
     k: int = Query(default=20, ge=5, le=50),
-    diversity: float = Query(default=0.65, ge=0.0, le=1.0),
-    novelty: float = Query(default=0.15, ge=0.0, le=0.5),
+    diversity: float | None = Query(default=None, ge=0.0, le=1.0),
+    novelty: float | None = Query(default=None, ge=0.0, le=0.5),
 ):
     engine = get_engine()
     # Generate primary personalized recommendations
     rec_result = engine.recommend(
         user_idx=user_id,
         top_k=k,
-        retrieval_k=settings.retrieval_candidates_k,
+        retrieval_k=engine.retrieval_two_tower_k,
         lambda_param=diversity,
         novelty_weight=novelty,
     )

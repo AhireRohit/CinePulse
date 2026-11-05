@@ -1,0 +1,15 @@
+{
+  "best_variant": "MMR-P3 (Light Diversity: lambda=0.95, beta=0.01)",
+  "delta_ndcg@10_vs_baseline_prod_mmr": 0.021,
+  "ci95_ndcg@10": [
+    0.0173,
+    0.0248
+  ],
+  "p_value": 0.001,
+  "baseline_mmr_ndcg@10": 0.0413,
+  "best_mmr_ndcg@10": 0.0623,
+  "baseline_mmr_recall@20": 0.15,
+  "best_mmr_recall@20": 0.208,
+  "baseline_mmr_ild": 0.8025,
+  "best_mmr_ild": 0.6253
+}

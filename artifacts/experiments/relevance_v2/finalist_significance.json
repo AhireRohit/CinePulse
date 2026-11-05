@@ -1,0 +1,182 @@
+{
+  "2. Old High-Diversity Baseline Pipeline (17f + MMR 0.65/0.15)": {
+    "vs_published_prod_baseline": {
+      "delta_ndcg@10": -0.0171,
+      "ci95_ndcg@10": [
+        -0.0199,
+        -0.0138
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": -29.28
+    },
+    "vs_pure_ranker_baseline": {
+      "delta_ndcg@10": -0.0213,
+      "ci95_ndcg@10": [
+        -0.025,
+        -0.0171
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": -34.03
+    }
+  },
+  "4. New 24f Pure Ranker (Ranker-V5, Baseline Pool TT=100/CF=100)": {
+    "vs_published_prod_baseline": {
+      "delta_ndcg@10": 0.0278,
+      "ci95_ndcg@10": [
+        0.0228,
+        0.0331
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 47.6
+    },
+    "vs_pure_ranker_baseline": {
+      "delta_ndcg@10": 0.0236,
+      "ci95_ndcg@10": [
+        0.0188,
+        0.0285
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 37.7
+    }
+  },
+  "5. New 24f Pure Ranker (Ranker-V5, Expanded Pool TT=200/CF=100)": {
+    "vs_published_prod_baseline": {
+      "delta_ndcg@10": 0.0292,
+      "ci95_ndcg@10": [
+        0.0239,
+        0.0348
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 50.0
+    },
+    "vs_pure_ranker_baseline": {
+      "delta_ndcg@10": 0.025,
+      "ci95_ndcg@10": [
+        0.0199,
+        0.0304
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 39.94
+    }
+  },
+  "6. New 24f Ranker + Exp 5 Blend (0.70/0.10/0.20, No MMR)": {
+    "vs_published_prod_baseline": {
+      "delta_ndcg@10": 0.0291,
+      "ci95_ndcg@10": [
+        0.0236,
+        0.0349
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 49.83
+    },
+    "vs_pure_ranker_baseline": {
+      "delta_ndcg@10": 0.0249,
+      "ci95_ndcg@10": [
+        0.0199,
+        0.0301
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 39.78
+    }
+  },
+  "7. New 24f Ranker + Grand Champ Blend (0.75/0.18/0.07, No MMR)": {
+    "vs_published_prod_baseline": {
+      "delta_ndcg@10": 0.0263,
+      "ci95_ndcg@10": [
+        0.0207,
+        0.032
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 45.03
+    },
+    "vs_pure_ranker_baseline": {
+      "delta_ndcg@10": 0.0221,
+      "ci95_ndcg@10": [
+        0.0169,
+        0.0276
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 35.3
+    }
+  },
+  "8. New 24f Ranker + Relevance-First MMR (0.95/0.01, No Fusion)": {
+    "vs_published_prod_baseline": {
+      "delta_ndcg@10": 0.0292,
+      "ci95_ndcg@10": [
+        0.0238,
+        0.035
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 50.0
+    },
+    "vs_pure_ranker_baseline": {
+      "delta_ndcg@10": 0.025,
+      "ci95_ndcg@10": [
+        0.02,
+        0.0302
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 39.94
+    }
+  },
+  "9. Grand Champion Full Pipeline (0.75/0.18/0.07 + MMR 0.95/0.01)": {
+    "vs_published_prod_baseline": {
+      "delta_ndcg@10": 0.0271,
+      "ci95_ndcg@10": [
+        0.0214,
+        0.0329
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 46.4
+    },
+    "vs_pure_ranker_baseline": {
+      "delta_ndcg@10": 0.0229,
+      "ci95_ndcg@10": [
+        0.0175,
+        0.0283
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 36.58
+    }
+  },
+  "10. Grand Champion Alt Full Pipeline (0.70/0.10/0.20 + MMR 0.95/0.01)": {
+    "vs_published_prod_baseline": {
+      "delta_ndcg@10": 0.0292,
+      "ci95_ndcg@10": [
+        0.0238,
+        0.035
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 50.0
+    },
+    "vs_pure_ranker_baseline": {
+      "delta_ndcg@10": 0.025,
+      "ci95_ndcg@10": [
+        0.0199,
+        0.0304
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 39.94
+    }
+  },
+  "11. New 24f Ranker + Production MMR (0.85/0.03, No Fusion)": {
+    "vs_published_prod_baseline": {
+      "delta_ndcg@10": 0.0238,
+      "ci95_ndcg@10": [
+        0.0188,
+        0.0297
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 40.75
+    },
+    "vs_pure_ranker_baseline": {
+      "delta_ndcg@10": 0.0196,
+      "ci95_ndcg@10": [
+        0.0145,
+        0.025
+      ],
+      "p_value": 0.001,
+      "relative_gain_ndcg@10": 31.31
+    }
+  }
+}

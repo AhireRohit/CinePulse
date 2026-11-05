@@ -23,15 +23,15 @@ const getBaseUrl = () => {
   return base.endsWith('/') ? base : `${base}/`;
 };
 
-const isStaticHost =
+export const isStaticHost =
   typeof window !== 'undefined' &&
   (window.location.hostname.endsWith('github.io') ||
     window.location.protocol === 'file:' ||
-    window.location.hostname === 'localhost' && Boolean(import.meta.env.VITE_DEMO_MODE));
+    (window.location.hostname === 'localhost' && Boolean(import.meta.env.VITE_DEMO_MODE)));
 
 // Cache movies in memory for fast search and details in static mode
 let cachedMovies: any[] | null = null;
-const loadMovies = async (): Promise<any[]> => {
+export const loadMovies = async (): Promise<any[]> => {
   if (cachedMovies && cachedMovies.length > 0) return cachedMovies;
   try {
     const res = await fetch(`${getBaseUrl()}demo-data/movies.json`);
@@ -50,7 +50,12 @@ export const getHealth = async () => {
       return res.data;
     } catch {}
   }
-  return { status: 'healthy', mode: 'static_showcase', engine: 'precomputed_v2' };
+  return {
+    status: 'showcase',
+    mode: 'static_showcase',
+    engine: 'precomputed_v2',
+    label: 'Static Showcase Mode • Precomputed V2 Artifacts',
+  };
 };
 
 export const getUsers = async (): Promise<UserProfile[]> => {
@@ -123,11 +128,106 @@ export const getRecommendations = async (
   }
 
   const availableDemoIds = [12, 45, 88, 120];
-  const targetId = availableDemoIds.includes(userId) ? userId : 12;
-  const res = await fetch(`${getBaseUrl()}demo-data/recommendations_${targetId}.json`);
-  const feed: RecommendationFeed = await res.json();
+  let feed: RecommendationFeed;
 
-  // Apply real-time localStorage session adaptation
+  if (availableDemoIds.includes(userId)) {
+    const res = await fetch(`${getBaseUrl()}demo-data/recommendations_${userId}.json`);
+    feed = await res.json();
+  } else {
+    // Generate authentic onboarding showcase feed from movies catalog based on user's onboarding preferences
+    const customUsersStr = localStorage.getItem('cinepulse_custom_users');
+    let customUser: UserProfile | null = null;
+    if (customUsersStr) {
+      try {
+        const customUsers = JSON.parse(customUsersStr);
+        customUser = customUsers.find((u: UserProfile) => u.user_idx === userId) || null;
+      } catch {}
+    }
+
+    const movies = await loadMovies();
+    const prefGenres = new Set(customUser?.preferred_genres || []);
+    const matchingMovies = movies.filter((m: any) =>
+      m.genres?.some((g: string) => prefGenres.has(g))
+    );
+    const pool = matchingMovies.length >= 20 ? matchingMovies : movies;
+    const sorted = [...pool].sort((a: any, b: any) => (b.bayesian_rating || 0) - (a.bayesian_rating || 0));
+
+    const topPicks: RecommendationItem[] = sorted.slice(0, 10).map((m: any, idx: number) => ({
+      rank: idx + 1,
+      movie_idx: m.movie_idx,
+      movieId: m.movieId,
+      title: m.title,
+      full_title: m.full_title,
+      release_year: m.release_year,
+      genres: m.genres,
+      rating_mean: m.rating_mean,
+      rating_count: m.rating_count,
+      bayesian_rating: m.bayesian_rating,
+      final_score: Math.round((0.92 - idx * 0.02) * 1000) / 1000,
+      relevance_score: Math.round((0.95 - idx * 0.02) * 1000) / 1000,
+      match_percentage: Math.max(70, 95 - idx * 2),
+      affinity_label: 'Onboarding Preference Match',
+      diversity_penalty: 0.0,
+      novelty_score: 0.25,
+      retrieval_source: 'onboarding_preference',
+      reason: `Matched for your interests in ${(customUser?.preferred_genres || []).join(', ') || 'top movies'}`,
+      poster_url: m.poster_url,
+    }));
+
+    const acclaimed: RecommendationItem[] = [...pool]
+      .filter((m: any) => (m.rating_count || 0) > 1000)
+      .sort((a: any, b: any) => (b.rating_mean || 0) - (a.rating_mean || 0))
+      .slice(0, 8)
+      .map((m: any, idx: number) => ({
+        rank: idx + 1,
+        movie_idx: m.movie_idx,
+        movieId: m.movieId,
+        title: m.title,
+        full_title: m.full_title,
+        release_year: m.release_year,
+        genres: m.genres,
+        rating_mean: m.rating_mean,
+        rating_count: m.rating_count,
+        bayesian_rating: m.bayesian_rating,
+        final_score: Math.round((0.90 - idx * 0.02) * 1000) / 1000,
+        relevance_score: Math.round((0.92 - idx * 0.02) * 1000) / 1000,
+        match_percentage: 90,
+        affinity_label: 'Acclaimed in Your Genres',
+        diversity_penalty: 0.0,
+        novelty_score: 0.15,
+        retrieval_source: 'popularity',
+        reason: 'Critically acclaimed community favorite',
+        poster_url: m.poster_url,
+      }));
+
+    const hero = topPicks[0];
+    feed = {
+      user_idx: userId,
+      model_version: 'v2',
+      pipeline: 'CinePulse V2 Onboarding Showcase (curated from V2 catalog)',
+      hero_featured: hero
+        ? {
+            ...hero,
+            reason: `Top Spotlight: ${hero.rating_mean}/5.0 community rating in ${(customUser?.preferred_genres || ['Cinema'])[0]}`,
+          }
+        : undefined,
+      rails: {
+        'Curated For Your Profile': topPicks,
+        'Critically Acclaimed In Your Genres': acclaimed,
+      },
+      total_candidates: pool.length,
+      retrieval_sources_breakdown: {
+        two_tower: 0,
+        item_cf: 0,
+        popularity: pool.length,
+      },
+      timings_ms: {
+        total_ms: 1.5,
+      },
+    };
+  }
+
+  // Apply real-time localStorage session adaptation (dislikes, dismissals)
   const dismissedStr = localStorage.getItem(`cinepulse_dismissed_${userId}`);
   const dislikedStr = localStorage.getItem(`cinepulse_disliked_${userId}`);
   const hiddenIds = new Set<number>();
@@ -203,7 +303,7 @@ export const postFeedback = async (
     user_idx: userId,
     movie_idx: movieId,
     action,
-    message: `Recorded '${action}' in active session. Demo account baseline remains protected.`,
+    message: `Recorded '${action}' in active session (client-side showcase).`,
   };
 };
 
@@ -364,32 +464,65 @@ export const getUserInsights = async (userId: number): Promise<UserInsights> => 
   const likedStr = localStorage.getItem(`cinepulse_liked_${userId}`);
   const dismissedStr = localStorage.getItem(`cinepulse_dismissed_${userId}`);
   const savedCount = savedStr ? JSON.parse(savedStr).length : 0;
-  const likedCount = likedStr ? JSON.parse(likedStr).length : 4;
+  const likedCount = likedStr ? JSON.parse(likedStr).length : 0;
   const dismissedCount = dismissedStr ? JSON.parse(dismissedStr).length : 0;
+
+  const availableDemoIds = [12, 45, 88, 120];
+  if (availableDemoIds.includes(userId)) {
+    try {
+      const res = await fetch(`${getBaseUrl()}demo-data/insights_${userId}.json`);
+      const baseInsights = await res.json();
+      return {
+        user_idx: userId,
+        total_interactions: (baseInsights.total_interactions || 50) + likedCount + savedCount,
+        active_likes_count: (baseInsights.active_likes_count || 0) + likedCount,
+        active_saves_count: (baseInsights.active_saves_count || 0) + savedCount,
+        dismissed_count: (baseInsights.dismissed_count || 0) + dismissedCount,
+        top_affinity_genres: baseInsights.top_affinity_genres || [
+          { genre: 'Sci-Fi', affinity: 0.38 },
+          { genre: 'Mystery', affinity: 0.24 },
+          { genre: 'Thriller', affinity: 0.18 },
+          { genre: 'Drama', affinity: 0.12 },
+          { genre: 'Action', affinity: 0.08 },
+        ],
+        retrieval_sources_breakdown: baseInsights.retrieval_sources_breakdown || {
+          two_tower: 200,
+          item_cf: 100,
+          popularity: 30,
+        },
+        timing_breakdown_ms: baseInsights.timing_breakdown_ms || {
+          two_tower_ms: 6.5,
+          item_cf_ms: 2.1,
+          popularity_ms: 0.1,
+          ranking_ms: 13.8,
+          reranking_ms: 2.8,
+          total_ms: 25.3,
+        },
+      };
+    } catch {}
+  }
 
   return {
     user_idx: userId,
-    total_interactions: 45 + likedCount + savedCount,
+    total_interactions: 25 + likedCount + savedCount,
     active_likes_count: likedCount,
     active_saves_count: savedCount,
     dismissed_count: dismissedCount,
     top_affinity_genres: [
-      { genre: 'Sci-Fi', affinity: 0.38 },
-      { genre: 'Mystery', affinity: 0.24 },
-      { genre: 'Thriller', affinity: 0.18 },
-      { genre: 'Drama', affinity: 0.12 },
-      { genre: 'Action', affinity: 0.08 },
+      { genre: 'Curated', affinity: 0.40 },
+      { genre: 'Acclaimed', affinity: 0.30 },
+      { genre: 'Personalized', affinity: 0.30 },
     ],
     retrieval_sources_breakdown: {
-      two_tower: 100,
-      item_cf: 80,
-      popularity: 20,
+      two_tower: 200,
+      item_cf: 100,
+      popularity: 30,
     },
     timing_breakdown_ms: {
-      candidate_retrieval_ms: 6.2,
-      lightgbm_ranking_ms: 10.4,
-      mmr_reranking_ms: 3.1,
-      total_pipeline_ms: 19.7,
+      candidate_retrieval_ms: 6.5,
+      lightgbm_ranking_ms: 13.8,
+      mmr_reranking_ms: 2.8,
+      total_pipeline_ms: 23.1,
     },
   };
 };

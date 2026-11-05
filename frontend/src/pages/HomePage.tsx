@@ -3,6 +3,7 @@ import { SlidersHorizontal, RefreshCw, Sparkles, AlertCircle, Compass, Zap } fro
 import type { RecommendationFeed } from '../types';
 import { HeroBanner } from '../components/HeroBanner';
 import { MovieRail } from '../components/MovieRail';
+import { isStaticHost } from '../api/client';
 
 interface HomePageProps {
   feed: RecommendationFeed | null;
@@ -70,8 +71,12 @@ export const HomePage: React.FC<HomePageProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-border/80">
         <div>
           <div className="flex items-center space-x-2 text-[11px] font-mono tracking-wider text-muted uppercase">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Multi-Stage Recommendation Engine Active</span>
+            <span className={`w-2 h-2 rounded-full ${isStaticHost ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+            <span>
+              {isStaticHost
+                ? 'Precomputed V2 Model Showcase (GitHub Pages)'
+                : 'Live CinePulse V2 Serving Pipeline Active'}
+            </span>
           </div>
           <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-white tracking-tight mt-0.5">
             Curated For {activeProfileName}
@@ -127,6 +132,16 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* Real-time MMR Tuning Panel */}
       {showTuning && (
         <div className="mb-8 p-6 rounded-2xl bg-surface-elevated border border-accent/30 shadow-2xl animate-fade-in">
+          {isStaticHost && (
+            <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start space-x-2 text-xs text-amber-200">
+              <AlertCircle className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold text-white">Showcase Notice: </span>
+                Dynamic MMR slider tuning requires the local Python FastAPI backend with active in-process FAISS/LightGBM re-scoring. This static GitHub Pages deployment serves authentic precomputed V2 production recommendations (&lambda;=0.95, &beta;=0.01).
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2 text-xs font-bold text-accent">
               <Sparkles className="w-4 h-4" />

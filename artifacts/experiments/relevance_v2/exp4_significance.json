@@ -1,0 +1,13 @@
+{
+  "best_variant": "TT-V3 (Higher Capacity: tau=0.04, hidden=256)",
+  "delta_ndcg@10_vs_baseline_tt": 0.0056,
+  "ci95_ndcg@10": [
+    0.0013,
+    0.0097
+  ],
+  "p_value": 0.01,
+  "baseline_ndcg@10": 0.035,
+  "best_ndcg@10": 0.0406,
+  "baseline_recall@20": 0.1313,
+  "best_recall@20": 0.1335
+}

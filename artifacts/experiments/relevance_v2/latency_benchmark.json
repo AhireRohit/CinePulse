@@ -1,0 +1,11 @@
+{
+  "num_queries": 100,
+  "total_time_seconds": 2.314,
+  "throughput_qps": 43.21,
+  "mean_latency_ms": 23.14,
+  "p50_latency_ms": 21.42,
+  "p90_latency_ms": 27.85,
+  "p95_latency_ms": 32.99,
+  "p99_latency_ms": 41.98,
+  "device": "cuda"
+}

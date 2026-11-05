@@ -1,0 +1,128 @@
+{
+  "TT-V1 (Baseline Production: tau=0.05, hidden=128)": {
+    "experiment_name": "TT-V1 (Baseline Production: tau=0.05, hidden=128)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.0723,
+    "recall@20": 0.1313,
+    "recall@20_ci95": [
+      0.1221,
+      0.1414
+    ],
+    "recall@50": 0.2351,
+    "recall@100": 0.3542,
+    "ndcg@5": 0.025,
+    "ndcg@10": 0.035,
+    "ndcg@10_ci95": [
+      0.0312,
+      0.039
+    ],
+    "ndcg@20": 0.0497,
+    "mrr@10": 0.0238,
+    "positive_only_recall@20": 0.1356,
+    "positive_only_recall@20_ci95": [
+      0.1241,
+      0.1471
+    ],
+    "positive_only_ndcg@10": 0.0383,
+    "positive_only_ndcg@10_ci95": [
+      0.0337,
+      0.043
+    ],
+    "graded_ndcg@10": 0.0288,
+    "catalog_coverage@20": 0.9886,
+    "catalog_coverage@100": 1.0,
+    "intra_list_diversity": 0.4539,
+    "novelty_bits": 12.31,
+    "latency_p50_ms": 0.15,
+    "latency_p95_ms": 0.25,
+    "train_or_opt_runtime_sec": 0.0,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like."
+  },
+  "TT-V2 (Sharper Temp: tau=0.03, hidden=128)": {
+    "experiment_name": "TT-V2 (Sharper Temp: tau=0.03, hidden=128)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.0637,
+    "recall@20": 0.1173,
+    "recall@20_ci95": [
+      0.1086,
+      0.1267
+    ],
+    "recall@50": 0.2233,
+    "recall@100": 0.3319,
+    "ndcg@5": 0.0222,
+    "ndcg@10": 0.0308,
+    "ndcg@10_ci95": [
+      0.0271,
+      0.0346
+    ],
+    "ndcg@20": 0.0442,
+    "mrr@10": 0.021,
+    "positive_only_recall@20": 0.1196,
+    "positive_only_recall@20_ci95": [
+      0.1084,
+      0.1299
+    ],
+    "positive_only_ndcg@10": 0.0323,
+    "positive_only_ndcg@10_ci95": [
+      0.0277,
+      0.0368
+    ],
+    "graded_ndcg@10": 0.0254,
+    "catalog_coverage@20": 0.9807,
+    "catalog_coverage@100": 1.0,
+    "intra_list_diversity": 0.4449,
+    "novelty_bits": 12.3,
+    "latency_p50_ms": 0.15,
+    "latency_p95_ms": 0.25,
+    "train_or_opt_runtime_sec": 273.85,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like."
+  },
+  "TT-V3 (Higher Capacity: tau=0.04, hidden=256)": {
+    "experiment_name": "TT-V3 (Higher Capacity: tau=0.04, hidden=256)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.0797,
+    "recall@20": 0.1335,
+    "recall@20_ci95": [
+      0.1243,
+      0.1432
+    ],
+    "recall@50": 0.2402,
+    "recall@100": 0.3476,
+    "ndcg@5": 0.03,
+    "ndcg@10": 0.0406,
+    "ndcg@10_ci95": [
+      0.0363,
+      0.0451
+    ],
+    "ndcg@20": 0.0541,
+    "mrr@10": 0.0289,
+    "positive_only_recall@20": 0.1385,
+    "positive_only_recall@20_ci95": [
+      0.1279,
+      0.1497
+    ],
+    "positive_only_ndcg@10": 0.043,
+    "positive_only_ndcg@10_ci95": [
+      0.0378,
+      0.0483
+    ],
+    "graded_ndcg@10": 0.0334,
+    "catalog_coverage@20": 0.9906,
+    "catalog_coverage@100": 1.0,
+    "intra_list_diversity": 0.4704,
+    "novelty_bits": 12.22,
+    "latency_p50_ms": 0.16,
+    "latency_p95_ms": 0.23,
+    "train_or_opt_runtime_sec": 266.55,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like."
+  }
+}

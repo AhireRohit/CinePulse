@@ -1,0 +1,212 @@
+{
+  "Popularity Baseline": {
+    "experiment_name": "Popularity Baseline",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.0193,
+    "recall@20": 0.038,
+    "recall@20_ci95": [
+      0.0325,
+      0.0432
+    ],
+    "recall@50": 0.0753,
+    "recall@100": 0.1205,
+    "ndcg@5": 0.0076,
+    "ndcg@10": 0.0098,
+    "ndcg@10_ci95": [
+      0.0076,
+      0.0118
+    ],
+    "ndcg@20": 0.0145,
+    "mrr@10": 0.0069,
+    "positive_only_recall@20": 0.0507,
+    "positive_only_recall@20_ci95": [
+      0.0433,
+      0.0582
+    ],
+    "positive_only_ndcg@10": 0.0139,
+    "positive_only_ndcg@10_ci95": [
+      0.0109,
+      0.017
+    ],
+    "graded_ndcg@10": 0.0081,
+    "catalog_coverage@20": 0.036,
+    "catalog_coverage@100": 0.1314,
+    "intra_list_diversity": 0.8244,
+    "novelty_bits": 10.29,
+    "latency_p50_ms": 0.03,
+    "latency_p95_ms": 0.07,
+    "train_or_opt_runtime_sec": 0.0,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like."
+  },
+  "Item-based CF": {
+    "experiment_name": "Item-based CF",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.0639,
+    "recall@20": 0.1016,
+    "recall@20_ci95": [
+      0.0936,
+      0.1104
+    ],
+    "recall@50": 0.1847,
+    "recall@100": 0.2998,
+    "ndcg@5": 0.0224,
+    "ndcg@10": 0.0306,
+    "ndcg@10_ci95": [
+      0.0272,
+      0.0342
+    ],
+    "ndcg@20": 0.0402,
+    "mrr@10": 0.0206,
+    "positive_only_recall@20": 0.1204,
+    "positive_only_recall@20_ci95": [
+      0.1095,
+      0.131
+    ],
+    "positive_only_ndcg@10": 0.0372,
+    "positive_only_ndcg@10_ci95": [
+      0.0325,
+      0.0417
+    ],
+    "graded_ndcg@10": 0.0252,
+    "catalog_coverage@20": 0.2374,
+    "catalog_coverage@100": 0.6426,
+    "intra_list_diversity": 0.7185,
+    "novelty_bits": 9.45,
+    "latency_p50_ms": 0.76,
+    "latency_p95_ms": 3.42,
+    "train_or_opt_runtime_sec": 0.0,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like."
+  },
+  "Two-Tower (ANN Retrieval)": {
+    "experiment_name": "Two-Tower (ANN Retrieval)",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.0723,
+    "recall@20": 0.1313,
+    "recall@20_ci95": [
+      0.1221,
+      0.1414
+    ],
+    "recall@50": 0.2351,
+    "recall@100": 0.3542,
+    "ndcg@5": 0.025,
+    "ndcg@10": 0.035,
+    "ndcg@10_ci95": [
+      0.0312,
+      0.039
+    ],
+    "ndcg@20": 0.0497,
+    "mrr@10": 0.0238,
+    "positive_only_recall@20": 0.1356,
+    "positive_only_recall@20_ci95": [
+      0.1241,
+      0.1471
+    ],
+    "positive_only_ndcg@10": 0.0383,
+    "positive_only_ndcg@10_ci95": [
+      0.0337,
+      0.043
+    ],
+    "graded_ndcg@10": 0.0288,
+    "catalog_coverage@20": 0.9886,
+    "catalog_coverage@100": 1.0,
+    "intra_list_diversity": 0.4539,
+    "novelty_bits": 12.31,
+    "latency_p50_ms": 0.16,
+    "latency_p95_ms": 0.27,
+    "train_or_opt_runtime_sec": 0.0,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like."
+  },
+  "Existing Pure Ranker": {
+    "experiment_name": "Existing Pure Ranker",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.1297,
+    "recall@20": 0.2129,
+    "recall@20_ci95": [
+      0.201,
+      0.2245
+    ],
+    "recall@50": 0.3494,
+    "recall@100": 0.4536,
+    "ndcg@5": 0.0508,
+    "ndcg@10": 0.0665,
+    "ndcg@10_ci95": [
+      0.0612,
+      0.072
+    ],
+    "ndcg@20": 0.0873,
+    "mrr@10": 0.0475,
+    "positive_only_recall@20": 0.2213,
+    "positive_only_recall@20_ci95": [
+      0.2081,
+      0.2342
+    ],
+    "positive_only_ndcg@10": 0.07,
+    "positive_only_ndcg@10_ci95": [
+      0.0636,
+      0.0762
+    ],
+    "graded_ndcg@10": 0.0549,
+    "catalog_coverage@20": 0.6168,
+    "catalog_coverage@100": 0.8586,
+    "intra_list_diversity": 0.5917,
+    "novelty_bits": 10.27,
+    "latency_p50_ms": 8.69,
+    "latency_p95_ms": 14.37,
+    "train_or_opt_runtime_sec": 0.0,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like."
+  },
+  "Existing Full Pipeline": {
+    "experiment_name": "Existing Full Pipeline",
+    "cohort": "validation_all_eligible",
+    "eval_users_std": 4980,
+    "eval_users_pos": 3488,
+    "eval_users_all": 6040,
+    "recall@10": 0.0841,
+    "recall@20": 0.161,
+    "recall@20_ci95": [
+      0.1508,
+      0.1717
+    ],
+    "recall@50": 0.3227,
+    "recall@100": 0.446,
+    "ndcg@5": 0.0324,
+    "ndcg@10": 0.0436,
+    "ndcg@10_ci95": [
+      0.0392,
+      0.0481
+    ],
+    "ndcg@20": 0.0629,
+    "mrr@10": 0.0315,
+    "positive_only_recall@20": 0.1723,
+    "positive_only_recall@20_ci95": [
+      0.16,
+      0.1841
+    ],
+    "positive_only_ndcg@10": 0.0443,
+    "positive_only_ndcg@10_ci95": [
+      0.0388,
+      0.0496
+    ],
+    "graded_ndcg@10": 0.0359,
+    "catalog_coverage@20": 0.6633,
+    "catalog_coverage@100": 0.9177,
+    "intra_list_diversity": 0.7954,
+    "novelty_bits": 10.54,
+    "latency_p50_ms": 10.81,
+    "latency_p95_ms": 17.21,
+    "train_or_opt_runtime_sec": 0.0,
+    "protocol_note": "Single-held-out validation item per user. In this protocol, Recall@K is mathematically equivalent to Hit Rate@K. It measures whether the specific held-out interaction is in top-K, not recall over all movies the user would like."
+  }
+}
